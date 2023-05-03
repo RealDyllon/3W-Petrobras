@@ -12,6 +12,35 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{listings}
+
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{pythonstyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=pythonstyle}
 
 \begin{document}
 
@@ -183,25 +212,73 @@ source & object \\
 
 \subsection{Exploratory Data Analysis}
 
-EDA here
+A bar chart was generated displaying the percentage of present values in each column of the data frame - see Figure \ref{fig:missingvalues}. It contained missing values in several columns, thus some columns and row were deleted in order to obtain accurate and reliable results.
+
+Three boxplots were plotted to show how the data was distributed before any data cleaning - see Figure \ref{fig:distr_boxplots_before_cleaning}. They were divided according the feature measurement unit: the pressure features were measured in Pascal (Pa), the temperature features are measured in degrees Celsius (°C) and one feature about volumetric flow rate which was measured in standard cubic meters per second (SCM/s).
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{missingvalues.png}
+\caption{\label{fig:missingvalues}Proportion of available data per column, in \%.}
+\end{figure}
 
 
-
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{distr_boxplots_before_cleaning.png}
+\caption{\label{fig:distr_boxplots_before_cleaning}Boxplots showing the distribution of pressure, temperature, and QGL (SCM/s) data for a set of oil wells.}
+\end{figure}
 
 
 \section{Data Preparation}
 
-\begin{figure}
-\centering
-\includegraphics[width=0.3\textwidth]{frog.jpg}
-\caption{\label{fig:frog}This frog was uploaded via the file-tree menu.}
-\end{figure}
+Data preparation included Data Cleaning, Feature Engineering, Train/Test Splitting and Handling Imbalanced Data, Data Scaling, and an analysis of the chosen approach regarding dimensionality reduction for some models.
 
-Simply use the section and subsection commands, as in this example document! With Overleaf, all the formatting and numbering is handled automatically according to the template you've chosen. If you're using Rich Text mode, you can also create new section and subsections via the buttons in the editor toolbar.
+\subsection{Data Cleaning}
 
-First you have to upload the image file from your computer using the upload link in the file-tree menu. Then use the includegraphics command to include it in your document. Use the figure environment and the caption command to add a number and a caption to your figure. See the code for Figure \ref{fig:frog} in this section for an example.
+The missing data from the following columns were removed: class, P-PDG, P-TPT, T-JUS-CKP, P-MON-CKP,T-TPT, P-MON-CKP, QGL and P-JUS-CKGL. After this, the columns class, T-JUS-CKGL (an empty column), id, source were dropped. Column class is a column which brings more details about label. Consider that columns timestamp, label were kept at this stage. Finally all duplicates were removed. 
 
-Note that your figure will automatically be placed in the most appropriate place for it, given the surrounding text and taking into account other figures or tables that may be close by. You can find out more about adding images to your documents in this help article on \href{https://www.overleaf.com/learn/how-to/Including_images_on_Overleaf}{including images on Overleaf}.
+\begin{lstlisting}[language=Python]
+# dropping rows with missing or null class column
+df_clean = df.dropna(subset=[
+    'class','P-PDG','P-TPT','T-JUS-CKP','P-MON-CKP','T-TPT',
+    'P-MON-CKP','QGL','P-JUS-CKGL'
+])
+
+# removing redundant columns
+df_clean = df_clean.drop(['class','T-JUS-CKGL','id','source'], axis=1)
+
+# checking duplicated rows after removing ids
+df_clean = df_clean.drop_duplicates()
+
+df_clean.info()
+\end{lstlisting}
+
+\begin{verbatim}
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 10003580 entries, 0 to 13952910
+Data columns (total 10 columns):
+ #   Column      Dtype         
+---  ------      -----         
+ 0   timestamp   datetime64[ns]
+ 1   label       int64         
+ 2   well        object        
+ 3   P-PDG       float64       
+ 4   P-TPT       float64       
+ 5   T-TPT       float64       
+ 6   P-MON-CKP   float64       
+ 7   T-JUS-CKP   float64       
+ 8   P-JUS-CKGL  float64       
+ 9   QGL         float64       
+dtypes: datetime64[ns](1), float64(7), int64(1), object(1)
+memory usage: 839.5+ MB
+\end{verbatim}
+
+
+\subsection{Feature Engineering}
+\subsection{Train/Test Splitting and Handling Imbalanced Data}
+\subsection{Data Scaling}
+\subsection{Dimensionality Reduction}
 
 \section{Modeling}
 
