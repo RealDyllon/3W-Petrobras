@@ -226,7 +226,7 @@ Three boxplots were plotted to show how the data was distributed before any data
 \begin{figure}
 \centering
 \includegraphics[width=1\textwidth]{distr_boxplots_before_cleaning.png}
-\caption{\label{fig:distr_boxplots_before_cleaning}Boxplots showing the distribution of pressure, temperature, and QGL (SCM/s) data for a set of oil wells.}
+\caption{\label{fig:distr_boxplots_before_cleaning}Box plots showing the distribution of pressure, temperature, and QGL (SCM/s) data for a set of oil wells.}
 \end{figure}
 
 
@@ -274,9 +274,150 @@ dtypes: datetime64[ns](1), float64(7), int64(1), object(1)
 memory usage: 839.5+ MB
 \end{verbatim}
 
+Also, as it can be seen on Figure \ref{fig:distr_boxplots_before_cleaning}, features P-PDG and P-TPT had the presence of extreme outliers. These outliers were also removed with the following code:
+
+\begin{lstlisting}[language=Python]
+# removing extreme outliers from P-PDG 
+Q1 = df_clean['P-PDG'].quantile(0.25)
+Q3 = df_clean['P-PDG'].quantile(0.75)
+IQR = Q3 - Q1
+lower_bound = Q1 - (3 * IQR)
+df_no_outliers = df_clean[(df_clean['P-PDG'] >= lower_bound)]
+
+# removing extreme outliers from P-TPT
+Q1 = df_no_outliers['P-TPT'].quantile(0.25)
+Q3 = df_no_outliers['P-TPT'].quantile(0.75)
+IQR = Q3 - Q1
+upper_bound = Q3 + (3 * IQR)
+df_no_outliers = df_no_outliers[(df_no_outliers['P-TPT'] <= upper_bound)]
+
+df_no_outliers.shape
+\end{lstlisting}
+\begin{verbatim}
+(9780901, 10)
+\end{verbatim}
+
+These rows with presence of extreme outliers represented 2.26\% of the resulting rows so far. As a result the distribution of values in P-PDG and P-TPT were modified, as Figure \ref{fig:distr_boxplots_after_cleaning} shows.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{distr_boxplots_after_cleaning.png}
+\caption{\label{fig:distr_boxplots_after_cleaning}Box plots showing the distribution of pressure, temperature, and QGL (SCM/s) data without extreme outliers.}
+\end{figure}
+
 
 \subsection{Feature Engineering}
+
+Given the label feature contains 8 possible numeric labels for each undesirable event and 1 label value 0 for normal observations, 8 new boolean columns were created for each one undesirable event, including for Severe Slugging, which is this project's target.
+
+\begin{lstlisting}[language=Python]
+dt_feat = df_no_outliers
+
+# Changing 'label' column to object dtype
+dt_feat['label'] = dt_feat['label'].astype('object') 
+
+# Creating uint8 columns for each label
+label_dummies = pd.get_dummies(dt_feat['label'], prefix='label')
+dt_feat = pd.concat([dt_feat, label_dummies], axis=1)
+
+# Renaming uint8 columns
+column_names = {
+    'label_0': 'Normal',
+    'label_1': 'AbrIncrBSW',
+    'label_2': 'SpurClosDHSW',
+    'label_3': 'SevSlug', # target
+    'label_4': 'FlowInst',
+    'label_5': 'RProdLoss',
+    'label_6': 'QuiRestrPCK',
+    'label_7': 'ScalingPCK',
+    'label_8': 'HydrProdLine'
+}
+dt_feat = dt_feat.rename(columns=column_names)
+
+# Dropping the original 'label' column and Normal column, 
+# since all other events must be 0
+dt_feat = dt_feat.drop(['label','Normal'], axis=1)
+dt_feat.info()
+\end{lstlisting}
+\begin{verbatim}
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 9780901 entries, 0 to 13952910
+Data columns (total 16 columns):
+ #   Column        Dtype         
+---  ------        -----         
+ 0   timestamp     datetime64[ns]
+ 1   well          object        
+ 2   P-PDG         float64       
+ 3   P-TPT         float64       
+ 4   T-TPT         float64       
+ 5   P-MON-CKP     float64       
+ 6   T-JUS-CKP     float64       
+ 7   P-JUS-CKGL    float64       
+ 8   QGL           float64       
+ 9   AbrIncrBSW    uint8         
+ 10  SpurClosDHSW  uint8         
+ 11  SevSlug       uint8         
+ 12  FlowInst      uint8         
+ 13  RProdLoss     uint8         
+ 14  QuiRestrPCK   uint8         
+ 15  ScalingPCK    uint8         
+dtypes: datetime64[ns](1), float64(7), object(1), uint8(7)
+memory usage: 811.5+ MB
+\end{verbatim}
+
+Then all undesirable events columns were deleted but the column which denotes the observations presents Severe Slugging. The column \emph{HydrProdLine} concerned to Hydrate in Production line, however this event was not found in the data set resulting from real instances.
+
+\begin{lstlisting}[language=Python]
+dt_feat_target = dt_feat.drop([
+#     , 'SevSlug', 'HydrProdLine',
+    'AbrIncrBSW','SpurClosDHSW','FlowInst','RProdLoss','QuiRestrPCK','ScalingPCK'
+], axis=1)
+
+dt_feat_target.info()
+\end{lstlisting}
+\begin{verbatim}
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 9780901 entries, 0 to 13952910
+Data columns (total 10 columns):
+ #   Column      Dtype         
+---  ------      -----         
+ 0   timestamp   datetime64[ns]
+ 1   well        object        
+ 2   P-PDG       float64       
+ 3   P-TPT       float64       
+ 4   T-TPT       float64       
+ 5   P-MON-CKP   float64       
+ 6   T-JUS-CKP   float64       
+ 7   P-JUS-CKGL  float64       
+ 8   QGL         float64       
+ 9   SevSlug     uint8         
+dtypes: datetime64[ns](1), float64(7), object(1), uint8(1)
+memory usage: 755.6+ MB
+\end{verbatim}
+
 \subsection{Train/Test Splitting and Handling Imbalanced Data}
+
+The following code defined how the data set was split in Train and Test data sets. Additionally, the columns \emph{timestamp} and \emph{well} were removed and at the end the percentual distribution of the records according the presence or absence of Severe Slugging was computed.
+
+\begin{lstlisting}[language=Python]
+# defining features (X) and label (y)
+target = 'SevSlug'
+
+X = dt_feat_target.drop([target,'timestamp','well'], axis=1)
+y = dt_feat_target[target]
+
+# splitting data into train and test sets
+X_train_u, X_test, y_train_u, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+class_names = {0:'Non Sev Slug', 1:'SEV SLUGGING'}
+print(y_train_u.value_counts(normalize=True).rename(index=class_names))
+\end{lstlisting}
+\begin{verbatim}
+Non Sev Slug    0.94194
+SEV SLUGGING    0.05806
+Name: SevSlug, dtype: float64
+\end{verbatim}
+
 \subsection{Data Scaling}
 \subsection{Dimensionality Reduction}
 
