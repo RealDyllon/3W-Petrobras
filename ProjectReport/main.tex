@@ -14,7 +14,12 @@
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
 \usepackage{listings}
 
+\usepackage[style=authoryear-ibid,backend=biber]{biblatex}
+
 \usepackage{xcolor}
+
+\usepackage{csquotes}% Recommended
+\addbibresource{projectreport.bib}% Syntax for version >= 1.2
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
@@ -84,7 +89,7 @@
    \begin{center}
        \vspace*{1cm}
 
-       \textbf{Detection and Prediction Severe Slugging based on Petrobras 3W Data Set}
+       \textbf{Detecting and Predicting Severe Slugging in Petrobras 3W Data Set}
 
        \vspace{0.5cm}
         Strategic Thinking Capstone Project
@@ -111,7 +116,7 @@
    \end{center}
 \end{titlepage}
 
-\title{Detection and Prediction Severe Slugging based on Petrobras 3W Data Set}
+\title{Detecting and Predicting Severe Slugging in Petrobras 3W Data Set}
 
 \author{Giulio Calef, Kevin Byrne, Victor Ferreira Silva}
 \tableofcontents
@@ -119,29 +124,73 @@
 \maketitle
 
 \section{Introduction}
-Introduction to be inserted here
+
 
 \subsection{Business Understanding}
 
-\subsubsection{Hypothesis}
-Hypothesis here
+Operational safety, productivity, quality are general key objectives in any industry, and in the oil and gas industry, environmental concerns not only are crucial importance, but poses as an immense daily challenge. 
+Any events which can cause a production loss in an oil field are certainly very costly, in pure economic terms, but can also have dire costs in terms of human lives and of damage to our environment that can be hard to address or almost permanent in some cases. Therefore, any technique that can help early detection and/or prevention of technical accidents in the oil industry is therefore very welcome and “worth as gold”. 
+Offshore oil wells provide some of the most challenging operating conditions in the industry, with additional complexity due to the peculiarities of operating at sea and the limited amount of instrumentation that can be deployed to monitor and control the well operational status.
 
-\subsubsection{General Goal}
-Goal here
+A simplified description of a typical offshore well can be seen below in Figure \ref{fig:offshore_well}.
 
-\subsubsection{Success criteria/indicators}
-Success criteria/indicators here
+Basically, a key structure in the well is the so-called \emph{Christmas Tree}, a structure lying on the seabed, at the well head, with pressure and temperature sensors (PDG – Permanent Downhole Gauge and TPT – Temperature and Pressure Transducer), and safety valves (DHSV – Downhole Safety Valve). In turn, a PCK (Production Choke valve) is installed on the drilling vessel/rig at the top.
 
-\subsubsection{Selected Processes and Technologies}
-Libraries, Models and machine learning algorithms. 
+Given this, Petrobras, the Brazilian oil company, has developed a data set (3W) that contains data for the most common monitored variables in offshore oil wells. This project aims to understand the relations between these variables and a specific oil well operational anomaly named \emph{Severe Slugging}.
 
-The models described in the next sections were trained in a MacBook Pro, with a processor 1.4 GHz Quad-Core Intel Core i5, a 8 GB 2133 MHz LPDDR3 memory and an Intel Iris Plus Graphics 645 1536 MB. The operational system was a macOS BigSur (version 11.7.3).
+Severe Slugging is an critical flow assurance issue, commonly observed in offshore pipeline-riser systems. Some of the consequences of this issue include flooding of downstream production facilities and an overall decrease in productivity.
+
+
+\begin{figure}
+\centering
+\includegraphics[width=0.6\textwidth]{offshore_well.png}
+\caption{\label{fig:offshore_well}Schematic of a typical offshore well - source: Petrobras}
+\end{figure}
+
+\subsection{Hypothesis}
+The data present in 3W Data Set allows classifier models to predict Severe Slugging with high accuracy.
+
+\subsection{General Goal}
+The business objective of our project is to apply machine learning techniques modeled in this project to the 3W data set to accurately predict \emph{Severe Slugging} in an offshore well production line. Achieving a significant accuracy in these predictions should be possible by identifying the correlations between the variables presented in the records monitored in an offshore oil well operation. 
+
+
+\subsection{Success Criteria}
+Success will be defined as the ability to accurately predict one or more of the conditions leading to an undesirable event. Given the potentially catastrophic impacts (ethical, environmental, economic) of accidents in the oil industry, the ability to predict a potential risk so that a quick reaction/fix can avoid unrecoverable conditions has a clear business value.
+
+\subsection{Methodologies and Technologies}
+
+The methodology that guided the iterations this project was CRISP-DM. Given this, a number of libraries were used throughout this process to support most of its distinct stages, that is, Data Understanding, Data Preparation, Modeling, and Evaluation. 
+
+Once the methodology was defined, Petrobras' \emph{3W Tool Kit} was studied and used to extract the data from the instances interesting to the project, that is, from the real instances that effectively presented the Severe Slugging event.
+
+Then, \emph{Pandas} and \emph{NumPy} libraries were selected for data manipulation and analysis. Then, the base machine learning library for the majority of models in this project was \emph{Scikit-learn}, as it offers various preprocessing, classification models and clustering algorithms. Another library imported in this project was \emph{Keras}, which is is an open-source solution that provides an interface for artificial neural networks.
+
+Besides that, \emph{StandardScaler} from the \emph{Scikit-learn} library was selected for scaling and normalisation of the data. Given the high data imbalance presented by the data set, a \emph{RandomUnderSampler} was also from \emph{Imbalanced-learn} library was imported. Regarding feature reduction, the decomposition algorithm \emph{PCA}, also from \emph{Scikit-learn}, was adopted here in this study. 
+
+Also, \emph{Seaborn}, \emph{Matplotlib} and \emph{Plotly} libraries were widely used to analyse data throughout the project and provide data visualisation using at the Evaluation stage. Another tool from \emph{Scikit-learn} selected as a baseline model was \emph{DummyClassifier}. 
+
+Additionally, the following tools from module \emph{model\_selection} in \emph{Scikit-learn} library were chose:
+
+\begin{itemize}
+    \item \emph{GridSearchCV}, for hyperparameter tuning
+    \item \emph{cross\_val\_score} for cross-validation, 
+    \item \emph{train\_test\_split} for train/test splitting,
+    \item \emph{KFold} for cross-validation during Evaluation
+\end{itemize}
+
+Ultimately, \emph{Scikit-learn} library also provided the following classifiers for this project:
+\begin{itemize}
+    \item LinearSVC, from \emph{svm} module,
+    \item KNeighborsClassifier, from \emph{neighbors} module,
+    \item DecisionTreeClassifier, from \emph{tree} module,
+    \item RandomForestClassifier, from \emph{ensemble} module
+\end{itemize}
+
+Lastly, the modules \emph{make\_pipeline} and \emph{Pipeline} from \emph{Scikit-learn} were used to chain all steps of the workflow together, and the library \emph{Pickle} was selected to persist the resulting models in file.
+
 
 \subsection{Accomplishment}
-\begin{itemize}
-\item Extracted and prepared data from Petrobras 3W
-\item Two models with a very high accuracy (Random Forest and Decision Tree)
-\end{itemize}
+After extracting using 3W Tool Kit and some CRISP-DM iterations, this project presented 2 models with a high accuracy.
 
 \section{Data Understanding}
 
@@ -191,7 +240,7 @@ The labels are:
 \item 8 - Hydrate in Production Line = HydrProdLine
 \end{itemize}
 
-In order to maintain the realistic aspects of the data, the dataset was built without preprocessing, including the presence of NaN values, frozen variables due to sensor or communication issues, instances with varying sizes, and outliers (R.E.V. Vargas, et al. 2019).
+In order to maintain the realistic aspects of the data, the data set was built without pre-processing, including the presence of NaN values, frozen variables due to sensor or communication issues, instances with varying sizes, and outliers \parencite{revvargas2019}.
 
 A concise summary of this data set generated by \emph{pandas.DataFrame.info} method can be seen on Table ~\ref{tab:widgets}.
 
@@ -1043,7 +1092,7 @@ plt.show()
 
 \section{Conclusion}
 
-In this study, Random Forest and Decision Tree Classifiers had the best performance overall with 99.994\% and 99.982\% of accuracy respectively. These non-linear classifier could find better results because the 3W data set does not present a clear linear separability between records pointing Severe Slugging and other observations pointing normal records or other undesirable events. 
+In this study, Random Forest and Decision Tree Classifiers had the best performance overall with 99.994\% and 99.982\% of accuracy respectively. These non-linear classifiers could find better results because the 3W data set does not present a clear linear separability between records related to Severe Slugging and other normal records or other undesirable events.
 
 % \subsection{How to write Mathematics}
 
@@ -1058,14 +1107,8 @@ In this study, Random Forest and Decision Tree Classifiers had the best performa
 
 You can simply upload a \verb|.bib| file containing your BibTeX entries, created with a tool such as JabRef. You can then cite entries from it, like this: \cite{greenwade93}. Just remember to specify a bibliography style, as well as the filename of the \verb|.bib|. You can find a \href{https://www.overleaf.com/help/97-how-to-include-a-bibliography-using-bibtex}{video tutorial here} to learn more about BibTeX.
 
-If you have an \href{https://www.overleaf.com/user/subscription/plans}{upgraded account}, you can also import your Mendeley or Zotero library directly as a \verb|.bib| file, via the upload menu in the file-tree.
-
-\subsection{Good luck!}
-
-We hope you find Overleaf useful, and do take a look at our \href{https://www.overleaf.com/learn}{help library} for more tutorials and user guides! Please also let us know if you have any feedback using the Contact Us link at the bottom of the Overleaf menu --- or use the contact form at \url{https://www.overleaf.com/contact}.
-
-\bibliographystyle{alpha}
-\bibliography{sample}
 \fi
+
+\printbibliography
 
 \end{document}
