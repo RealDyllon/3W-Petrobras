@@ -395,7 +395,7 @@ dtypes: datetime64[ns](1), float64(7), object(1), uint8(1)
 memory usage: 755.6+ MB
 \end{verbatim}
 
-\subsection{Train/Test Splitting and Handling Imbalanced Data}
+\subsection{Train/Test Splitting}
 
 The following code defined how the data set was split in Train and Test data sets. Additionally, the columns \emph{timestamp} and \emph{well} were removed and at the end the percentual distribution of the records according the presence or absence of Severe Slugging was computed.
 
@@ -418,8 +418,57 @@ SEV SLUGGING    0.05806
 Name: SevSlug, dtype: float64
 \end{verbatim}
 
+After the splitting process, the training data set had 6,846,630 rows and the test data set had 2,934,271 rows.
+
+\subsection{Handling Imbalanced Data}
+
+A \emph{RandomUnderSampler} was chosen to balance the data. As a result 50\% of observations presented Severe Slugging while the other 50\% were normal or presented other undesirable event. 
+
+\begin{lstlisting}[language=Python]
+# balancing data 
+balancing = RandomUnderSampler(random_state=42)
+
+X_train, y_train = balancing.fit_resample(X_train_u, y_train_u)
+
+class_names = {0:'Non Sev Slug', 1:'SEV SLUGGING'}
+print(y_train.value_counts(normalize=True).rename(index=class_names))
+print([X_train.shape, y_train.shape])
+\end{lstlisting}
+\begin{verbatim}
+Non Sev Slug    0.5
+SEV SLUGGING    0.5
+Name: SevSlug, dtype: float64
+[(795026, 7), (795026,)]
+\end{verbatim}
+
+Handling data imbalance is also important because it affects correlations - see as Figure \ref{fig:correlations} shows.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{correlations.png}
+\caption{\label{fig:correlations}Correlations between variables before and after data balancing}
+\end{figure}
+
 \subsection{Data Scaling}
+
+Although there are features presenting non-normal distributions, \emph{StandardScaler} was chosen as data scaler. It was chose because there are some features with strong correlation with Severe Slugging and lognormal distributions such as \emph{QGL} and \emph{P-JUS-CKGL} and as it is a method sensitive to the presence of outliers. The results of this transformation can be seen on Figure \ref{fig:std_scaler}.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{std_scaler.png}
+\caption{\label{fig:std_scaler}Box plot showing the distribution of the features in the training set after applying the StandardScaler transformation}
+\end{figure}
+
+
 \subsection{Dimensionality Reduction}
+
+The unsupervised learning technique Principal Component Analysis (PCA) was chosen not only to prepare the data for some of the models studied here, but also to evidence any possible linear separability in this model. In Figure \ref{fig:pca} the results of this dimensionality reduction can be seen in two ways, with 2 and 3 components.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{pca.png}
+\caption{\label{fig:pca}Visualisation of PCA applied to the data set showing a scatter plot for two (2D) and three (3D) principal components.}
+\end{figure}
 
 \section{Modeling}
 
