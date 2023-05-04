@@ -422,7 +422,7 @@ After the splitting process, the training data set had 6,846,630 rows and the te
 
 \subsection{Handling Imbalanced Data}
 
-A \emph{RandomUnderSampler} was chosen to balance the data. As a result 50\% of observations presented Severe Slugging while the other 50\% were normal or presented other undesirable event. 
+A \emph{RandomUnderSampler} was chosen to balance training data. As a result 50\% of observations presented Severe Slugging while the other 50\% were normal or presented other undesirable event. Test data set was not balanced since this project aim to best represent your deployment scenarios in real life.
 
 \begin{lstlisting}[language=Python]
 # balancing data 
@@ -462,7 +462,7 @@ Although there are features presenting non-normal distributions, \emph{StandardS
 
 \subsection{Dimensionality Reduction}
 
-The unsupervised learning technique Principal Component Analysis (PCA) was chosen not only to prepare the data for some of the models studied here, but also to evidence any possible linear separability in this model. In Figure \ref{fig:pca} the results of this dimensionality reduction can be seen in two ways, with 2 and 3 components.
+The unsupervised learning technique Principal Component Analysis (PCA) was chosen not only to prepare the data for some of the models studied here, but also to evidence any possible linear separability in this model. In Figure \ref{fig:pca} the results of this dimensionality reduction can be seen in two ways, with 2 and 3 components, although this process was unnecessary for the most successful models, that is, the non-linear classifiers.
 
 \begin{figure}
 \centering
@@ -472,7 +472,400 @@ The unsupervised learning technique Principal Component Analysis (PCA) was chose
 
 \section{Modeling}
 
-Modeling here
+For this project, five models were chosen: LinearSVC, k-Nearest Neighbors Classifier, Artificial Neural Network, Decision Tree Classifier and Random Forest Classifier. 
+
+\subsection{Baseline: DummyClassifier}
+Before proceeding with other models, a DummyClassifier was adopted to find a baseline for validation accuracy using the test data set. Given the distribution of the target variable in test data set, the baseline for any model was set in 94.17\%.
+
+\begin{lstlisting}[language=Python]
+dummy_pipeline = make_pipeline(StandardScaler(), DummyClassifier())
+dummy_pipeline.fit(X_train, y_train)
+
+# confirming score for Dummy classifier results from a balanced dataset
+score = dummy_pipeline.score(X_train, y_train)
+
+# predicting
+y_predicted = dummy_pipeline.predict(X_test)
+baseline = metrics.accuracy_score(y_test, y_predicted)
+
+print("Score: ", score)
+print("Accuracy: ",baseline)
+\end{lstlisting}
+\begin{verbatim}
+Score:  0.5
+Accuracy:  0.9417780429960286
+\end{verbatim}
+
+\subsection{LinearSVC}
+Although the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a linear support vector classifier (LinearSVC) was implemented as part of this benchmark.
+
+\subsubsection{Hyperparameter optimisation}
+For finding the best parameters for this model, the hyperparameters to tune PCA and the model were specified. Then a pipeline was created with 3 steps:
+\begin{enumerate}
+\item \emph{scaler} which uses StandardScaler method to scale the data
+\item \emph{dimred} which applies PCA dimensionality reduction
+\item \emph{linearsvc} which applies the LinearSVC model.
+\end{enumerate}
+
+Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
+\begin{lstlisting}[language=Python]
+from sklearn.svm import LinearSVC
+
+param_grid = {
+    'dimred__n_components': [3, 4], 
+    'linearsvc__C': [1e-2, 1e-1, 1, 10, 100],
+    'linearsvc__penalty':['l1', 'l2'],
+    'linearsvc__dual': [False, True],
+    'linearsvc__class_weight': ['balanced', None]
+}
+
+linear_svc_pipeline = Pipeline([
+    ('scaler', scaler_pipeline), 
+    ('dimred', PCA()), 
+    ('linearsvc', LinearSVC())
+])
+
+grid_search_lsvc = GridSearchCV(
+    linear_svc_pipeline,
+    param_grid=param_grid,
+    n_jobs=-1,
+    scoring='accuracy',
+    verbose=1
+)
+
+grid_search_lsvc.fit(X_train, y_train)
+\end{lstlisting}
+
+\subsubsection{Model training}
+Then the model was trained using a similar pipeline, but this time with the optimal combination of parameters.
+
+\begin{lstlisting}[language=Python]
+linear_svc_pipeline = Pipeline([
+    ('scaler', scaler_pipeline), 
+    ('dimred', PCA(
+        n_components=grid_search_lsvc.best_params_['dimred__n_components']
+    )),
+    ('linearsvc', LinearSVC(
+        dual=grid_search_lsvc.best_params_['linearsvc__dual'],
+        C=grid_search_lsvc.best_params_['linearsvc__C'],
+        penalty=grid_search_lsvc.best_params_['linearsvc__penalty'],
+        class_weight=grid_search_lsvc.best_params_['linearsvc__class_weight']
+    ))
+])
+
+linear_svc_pipeline.fit(X_train, y_train)
+\end{lstlisting}
+
+\subsection{k-Nearest Neighbors Classifier}
+A k-Nearest Neighbors Classifier (KNeighborsClassifier) was implemented as part of this benchmark.
+
+\subsubsection{Hyperparameter optimisation}
+For finding the best parameters for this model, the hyperparameters to tune PCA and the model were specified. Then a pipeline was created with 3 steps:
+\begin{enumerate}
+\item \emph{scaler} which uses StandardScaler method to scale the data
+\item \emph{dimred} which applies PCA dimensionality reduction
+\item \emph{kneighborsclassifier} which applies the KNeighborsClassifier model.
+\end{enumerate}
+
+Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
+\begin{lstlisting}[language=Python]
+from sklearn.neighbors import KNeighborsClassifier
+
+knn_pipeline = Pipeline([
+    ('scaler', scaler_pipeline), 
+    ('dimred', PCA()), 
+    ('kneighborsclassifier', KNeighborsClassifier())
+])
+
+param_grid = {
+    'dimred__n_components': [3, 4], 
+    'kneighborsclassifier__n_neighbors': range(3, 102, 3),
+}
+
+grid_search_knn = GridSearchCV(
+    knn_pipeline,
+    param_grid=param_grid,
+    n_jobs=-1,
+    scoring='accuracy',
+    verbose=1
+)
+
+grid_search_knn.fit(X_train, y_train)
+\end{lstlisting}
+
+\subsubsection{Model training}
+Then the model was trained using a similar pipeline, but this time with the optimal combination of parameters.
+
+\begin{lstlisting}[language=Python]
+knn_pipeline = Pipeline([
+    ('scaler', scaler_pipeline), 
+    ('dimred', PCA(
+        n_components=grid_search_knn.best_params_['dimred__n_components']
+    )),
+    ('kneighborsclassifier', KNeighborsClassifier(
+        n_neighbors=grid_search_knn.best_params_['kneighborsclassifier__n_neighbors']
+    ))
+])
+
+
+knn_pipeline.fit(X_train, y_train)
+\end{lstlisting}
+
+\subsection{Artificial Neural Network}
+
+A Neural Network was also implemented as part of this benchmark. For this model, before optimising hyperparameters, it was necessary to define a function that created the proper neural network using Keras library. 
+
+\subsubsection{Model definition}
+The amount of units and hidden layers in this model was specified during hyperparameter optimisation, as this function was defined with two arguments, namely \emph{num\_units} and \emph{num\_hidden\_layers}, respectively defined with default values 10 and 1.
+
+\begin{lstlisting}[language=Python]
+import tensorflow as tf
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.models import Sequential
+from keras.layers import Dense
+
+def build_clf(num_units=10, num_hidden_layers=1):
+    # initialising Sequential model and adding layers to it
+    ann_clf = tf.keras.models.Sequential()
+    
+    # adding hidden layers
+    for i in range(num_hidden_layers):
+        ann_clf.add(tf.keras.layers.Dense(units=num_units, activation='relu'))
+
+    # adding output layer
+    ann_clf.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
+    
+    # compiling model with chosen optimizer, loss function, and evaluation metrics
+    ann_clf.compile(
+        optimizer='adam',
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return ann_clf
+\end{lstlisting}
+
+Also, the training data was split again to monitor the loss value and to find the best number of epochs on a further step, and this way this validation data was not considered by the model.
+
+\begin{lstlisting}[language=Python]
+X_train_, X_val, y_train_, y_val = train_test_split(
+    X_train, y_train, 
+    test_size=0.3, random_state=42
+)
+
+[X_train_.shape, X_val.shape, y_train_.shape, y_val.shape]
+\end{lstlisting}
+\begin{verbatim}
+[(556518, 7), (238508, 7), (556518,), (238508,)]
+\end{verbatim}
+
+\subsubsection{Hyperparameter optimisation}
+For finding the best parameters for this model, the hyperparameters to tune the model were specified. Then a pipeline was created with 2 steps:
+\begin{enumerate}
+\item \emph{scaler} which uses StandardScaler method to scale the data
+\item \emph{annmodel} which applies the Sequential model.
+\end{enumerate}
+
+Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
+\begin{lstlisting}[language=Python]
+param_grid = {
+    'ann_model__num_units': [3, 4, 5, 6, 7],
+    'ann_model__num_hidden_layers': [2, 3, 4]
+}
+
+# creating an instance of the KerasClassifier using the defined function 
+ann_model = KerasClassifier(build_fn=build_clf, verbose=0)
+
+ann_pipeline = Pipeline([
+    ('scaler',scaler_pipeline), 
+    ('ann_model',ann_model)
+])
+
+grid_search_ann = GridSearchCV(
+    ann_pipeline,
+    param_grid=param_grid,
+    n_jobs=-1,
+    scoring='accuracy',
+    verbose=0
+)
+
+grid_search_ann.fit(X_train_, y_train_)
+\end{lstlisting}
+
+In order to monitor the history of the loss evolution according the number of epochs, the \emph{callback} parameter in the model \emph{fit} method should be included, then the history could be assign to a variable. However, as the history object was not accessible by the pipeline, the model was scaled and trained separately to generate this history.
+
+\begin{lstlisting}[language=Python]
+from keras import callbacks
+
+earlystopping = callbacks.EarlyStopping(
+    monitor="val_loss", mode="min", patience=5, restore_best_weights=True, 
+    verbose=-1
+)
+
+ann_model_ = KerasClassifier(
+    build_fn=build_clf, 
+    num_hidden_layers=grid_search_ann.best_params_['ann_model__num_hidden_layers'], 
+    num_units=grid_search_ann.best_params_['ann_model__num_units'], 
+    verbose=1
+)
+
+scaler_pipeline.fit(X_val)
+X_val = scaler_pipeline.transform(X_val)
+
+history = ann_model_.fit(X_train_, y_train_, 
+    epochs=15, 
+    verbose=0,
+    validation_data=(X_val, y_val),
+    callbacks=[earlystopping]
+)
+\end{lstlisting}
+
+The loss according the number of epochs on training and validation data can be seen on Figure \ref{fig:loss_vs_epochs} and a chart was created by the following code.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{loss_vs_epochs.png}
+\caption{\label{fig:loss_vs_epochs}The training and validation loss for a neural network model trained over 15 epochs with early stopping}
+\end{figure}
+
+\begin{lstlisting}[language=Python]
+# plotting the training and validation loss
+fig, (ax1) = plt.subplots(1, figsize=(5, 3))
+ax1.plot(history.history['loss'])
+ax1.plot(history.history['val_loss'],'o')
+ax1.set_xlabel('Epochs')
+ax1.set_ylabel('Loss')
+ax1.legend(['Training loss', 'Validation loss'])
+
+plt.show()
+\end{lstlisting}
+
+\subsubsection{Model training}
+
+Finally, the model was trained using a similar pipeline, with the optimal combination of parameters and the proper amount of epochs. The final configuration of this model is visible on Figure \ref{fig:nn_plot}.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.35\textwidth]{nn_plot.png}
+\caption{\label{fig:nn_plot}The architecture of a neural network model built using Keras}
+\end{figure}
+
+\begin{lstlisting}[language=Python]
+ann_model = KerasClassifier(
+    build_fn=build_clf,
+    num_units=grid_search_ann.best_params_['ann_model__num_units'],
+    num_hidden_layers=grid_search_ann.best_params_['ann_model__num_hidden_layers'],
+    verbose=0
+)
+
+ann_pipeline = Pipeline([
+    ('scaler', scaler_pipeline), 
+    ('ann_model', ann_model)
+])
+
+ann_pipeline.fit(
+    X_train, 
+    y_train,     
+    ann_model__epochs=5, 
+    ann_model__verbose=0
+)
+\end{lstlisting}
+
+
+
+
+
+\subsection{Decision Tree Classifier}
+As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Decision Tree Classifier was implemented as part of this benchmark.
+
+\subsubsection{Hyperparameter optimisation}
+For finding the best parameters for this model, the hyperparameters to tune the model were specified. Then a pipeline was created with 1 step:
+\begin{enumerate}
+\item \emph{decisiontreeclassifier} which applies the Decision Tree model.
+\end{enumerate}
+
+Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
+\begin{lstlisting}[language=Python]
+tree_pipeline = Pipeline([
+    ('decisiontreeclassifier', DecisionTreeClassifier())
+])
+
+param_grid = {
+    'decisiontreeclassifier__min_samples_split': [2, 5, 10],
+    'decisiontreeclassifier__min_samples_leaf': [1, 2, 4],
+    'decisiontreeclassifier__max_features': ['sqrt', 'log2']
+}
+
+grid_search_tree = GridSearchCV(
+    tree_pipeline,
+    param_grid=param_grid,
+    n_jobs=-1,
+    scoring='accuracy',
+    verbose=1
+)
+
+grid_search_tree.fit(X_train, y_train)
+\end{lstlisting}
+
+\subsubsection{Model training}
+Then the model was trained using a similar pipeline, but this time with the optimal combination of parameters.
+
+\begin{lstlisting}[language=Python]
+tree_pipeline = Pipeline([
+    ('decisiontreeclassifier', DecisionTreeClassifier(
+        min_samples_split=grid_search_tree.best_params_['decisiontreeclassifier__min_samples_split'],
+        min_samples_leaf=grid_search_tree.best_params_['decisiontreeclassifier__min_samples_leaf'],
+        max_features=grid_search_tree.best_params_['decisiontreeclassifier__max_features']
+    ))
+])
+
+tree_pipeline.fit(X_train, y_train)
+\end{lstlisting}
+
+\subsection{Random Forest Classifier} 
+As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Random Forest Classifier was implemented as part of this benchmark.
+
+\subsubsection{Hyperparameter optimisation}
+For finding the best parameters for this model, the hyperparameters to tune the model were specified. Then a pipeline was created with 1 step:
+\begin{enumerate}
+\item \emph{randomforestclassifier} which applies the Random Forest model.
+\end{enumerate}
+
+Then, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
+\begin{lstlisting}[language=Python]
+from sklearn.ensemble import RandomForestClassifier
+
+rf_pipeline = Pipeline([
+    ('randomforestclassifier', RandomForestClassifier())
+])
+
+param_grid = {
+    'randomforestclassifier__class_weight': ['balanced', 'balanced_subsample']
+}
+
+grid_search_rf = GridSearchCV(
+    rf_pipeline,
+    param_grid=param_grid,
+    n_jobs=-1,
+    scoring='accuracy',
+    verbose=1
+)
+
+grid_search_rf.fit(X_train, y_train)
+\end{lstlisting}
+
+\subsubsection{Model training}
+Then the model was trained using a similar pipeline, but this time with the optimal combination of parameters.
+
+\begin{lstlisting}[language=Python]
+rf_pipeline = Pipeline([
+    ('randomforestclassifier', RandomForestClassifier(
+        class_weight=grid_search_rf.best_params_['randomforestclassifier__class_weight']
+    ))
+])
+
+rf_pipeline.fit(X_train, y_train)
+\end{lstlisting}
 
 \section{Evaluation}
 
@@ -480,50 +873,15 @@ Evaluation here
 
 \section{Conclusion}
 
+% \subsection{How to write Mathematics}
+
+% \LaTeX{} is great at typesetting mathematics. Let $X_1, X_2, \ldots, X_n$ be a sequence of independent and identically distributed random variables with $\text{E}[X_i] = \mu$ and $\text{Var}[X_i] = \sigma^2 < \infty$, and let
+% \[S_n = \frac{X_1 + X_2 + \cdots + X_n}{n}
+%       = \frac{1}{n}\sum_{i}^{n} X_i\]
+%  denote their mean. Then as $n$ approaches infinity, the random variables $\sqrt{n}(S_n - \mu)$ converge in distribution to a normal $\mathcal{N}(0, \sigma^2)$.
 
 
-\subsection{How to add Comments and Track Changes}
-
-Comments can be added to your project by highlighting some text and clicking ``Add comment'' in the top right of the editor pane. To view existing comments, click on the Review menu in the toolbar above. To reply to a comment, click on the Reply button in the lower right corner of the comment. You can close the Review pane by clicking its name on the toolbar when you're done reviewing for the time being.
-
-Track changes are available on all our \href{https://www.overleaf.com/user/subscription/plans}{premium plans}, and can be toggled on or off using the option at the top of the Review pane. Track changes allow you to keep track of every change made to the document, along with the person making the change. 
-
-\subsection{How to add Lists}
-
-You can make lists with automatic numbering \dots
-
-\begin{enumerate}
-\item Like this,
-\item and like this.
-\end{enumerate}
-\dots or bullet points \dots
-\begin{itemize}
-\item Like this,
-\item and like this.
-\end{itemize}
-
-\subsection{How to write Mathematics}
-
-\LaTeX{} is great at typesetting mathematics. Let $X_1, X_2, \ldots, X_n$ be a sequence of independent and identically distributed random variables with $\text{E}[X_i] = \mu$ and $\text{Var}[X_i] = \sigma^2 < \infty$, and let
-\[S_n = \frac{X_1 + X_2 + \cdots + X_n}{n}
-      = \frac{1}{n}\sum_{i}^{n} X_i\]
-denote their mean. Then as $n$ approaches infinity, the random variables $\sqrt{n}(S_n - \mu)$ converge in distribution to a normal $\mathcal{N}(0, \sigma^2)$.
-
-
-\subsection{How to change the margins and paper size}
-
-Usually the template you're using will have the page margins and paper size set correctly for that use-case. For example, if you're using a journal article template provided by the journal publisher, that template will be formatted according to their requirements. In these cases, it's best not to alter the margins directly.
-
-If however you're using a more general template, such as this one, and would like to alter the margins, a common way to do so is via the geometry package. You can find the geometry package loaded in the preamble at the top of this example file, and if you'd like to learn more about how to adjust the settings, please visit this help article on \href{https://www.overleaf.com/learn/latex/page_size_and_margins}{page size and margins}.
-
-\subsection{How to change the document language and spell check settings}
-
-Overleaf supports many different languages, including multiple different languages within one document. 
-
-To configure the document language, simply edit the option provided to the babel package in the preamble at the top of this example project. To learn more about the different options, please visit this help article on \href{https://www.overleaf.com/learn/latex/International_language_support}{international language support}.
-
-To change the spell check language, simply open the Overleaf menu at the top left of the editor window, scroll down to the spell check setting, and adjust accordingly.
-
+\iffalse
 \subsection{How to add Citations and a References List}
 
 You can simply upload a \verb|.bib| file containing your BibTeX entries, created with a tool such as JabRef. You can then cite entries from it, like this: \cite{greenwade93}. Just remember to specify a bibliography style, as well as the filename of the \verb|.bib|. You can find a \href{https://www.overleaf.com/help/97-how-to-include-a-bibliography-using-bibtex}{video tutorial here} to learn more about BibTeX.
@@ -536,5 +894,6 @@ We hope you find Overleaf useful, and do take a look at our \href{https://www.ov
 
 \bibliographystyle{alpha}
 \bibliography{sample}
+\fi
 
 \end{document}
