@@ -891,6 +891,11 @@ grid_search_tree = GridSearchCV(
 grid_search_tree.fit(X_train, y_train)
 \end{lstlisting}
 
+Then, the one-step pipeline was redefined with the best parameters found considering the proposed scenario:
+\begin{enumerate}    
+    \item DecisionTreeClassifier(max\_features='sqrt')
+\end{enumerate}
+
 \subsubsection{Model training}
 Then the model was trained using a similar pipeline, but this time with the optimal combination of parameters.
 
@@ -937,6 +942,11 @@ grid_search_rf = GridSearchCV(
 
 grid_search_rf.fit(X_train, y_train)
 \end{lstlisting}
+
+Then, the one-step pipeline was redefined with the best parameter found considering the proposed scenario:
+\begin{enumerate}    
+    \item RandomForestClassifier(class\_weight='balanced')
+\end{enumerate}
 
 \subsubsection{Model training}
 Then the model was trained using a similar pipeline, but this time with the optimal combination of parameters.
