@@ -125,27 +125,35 @@
 
 \section{Introduction}
 
+Operational safety, productivity, quality are general key objectives in any industry, and in the oil and gas industry, environmental concerns are not only crucial, but they also pose as an immense daily challenge. 
 
-\subsection{Business Understanding}
+Generally, the oil industry has been increasingly adopting automated controls and monitoring processes \parencite{venkatasubramanian_rengaswamy_yin_kavuri_2003} to comply with the increasingly higher standards in their operations. Such standards not only require more productive operations, but safer processes and more energy-efficient methods to achieve greater quality \parencite{jounela_2007}.
 
-Operational safety, productivity, quality are general key objectives in any industry, and in the oil and gas industry, environmental concerns not only are crucial importance, but poses as an immense daily challenge. 
-Any events which can cause a production loss in an oil field are certainly very costly, in pure economic terms, but can also have dire costs in terms of human lives and of damage to our environment that can be hard to address or almost permanent in some cases. Therefore, any technique that can help early detection and/or prevention of technical accidents in the oil industry is therefore very welcome and “worth as gold”. 
+Thus, any event which can cause a production loss in an oil field are certainly very costly, in pure economic terms, but can also have dire costs in terms of human lives and of damage to our environment that can be hard to address or almost permanent in some cases. Therefore, any technique that can help early detection and/or prevention of technical accidents in the oil industry is therefore very welcome and “worth as gold”. 
+
 Offshore oil wells provide some of the most challenging operating conditions in the industry, with additional complexity due to the peculiarities of operating at sea and the limited amount of instrumentation that can be deployed to monitor and control the well operational status.
 
-A simplified description of a typical offshore well can be seen below in Figure \ref{fig:offshore_well}.
+One of the main challenges in oil industry is predicting undesirable events such as \emph{Severe Slugging}. Severe Slugging is an critical flow assurance issue, commonly observed in offshore pipeline-riser systems, documented for the first time by \textcite{yocum_1973}. Some of the consequences of this issue include flooding of downstream production facilities and an overall decrease in productivity. According \textcite{revvargas2019} depending on the frequency it occurs and intensity, this event may even damage the equipment in the well, although specific operational actions can be taken to mitigate this issue since it is detected.
 
-Basically, a key structure in the well is the so-called \emph{Christmas Tree}, a structure lying on the seabed, at the well head, with pressure and temperature sensors (PDG – Permanent Downhole Gauge and TPT – Temperature and Pressure Transducer), and safety valves (DHSV – Downhole Safety Valve). In turn, a PCK (Production Choke valve) is installed on the drilling vessel/rig at the top.
+According \textcite{revvargas2019}, a simplified description of a typical offshore well can be seen in Figure \ref{fig:offshore_well} and its structure is basically composed by:
 
-Given this, Petrobras, the Brazilian oil company, has developed a data set (3W) that contains data for the most common monitored variables in offshore oil wells. This project aims to understand the relations between these variables and a specific oil well operational anomaly named \emph{Severe Slugging}.
-
-Severe Slugging is an critical flow assurance issue, commonly observed in offshore pipeline-riser systems, documented for the first time by \textcite{yocum_1973}. Some of the consequences of this issue include flooding of downstream production facilities and an overall decrease in productivity.
+\begin{itemize}
+\item The Christmas Tree, a structure lying on the seabed, at the well head, with pressure and temperature sensors and safety valves
+\item An Electro-Hydraylic Umbilical, which is how The Christmas Tree is remotely controlled.
+\item The Permanent Downhole Gauge (PDG), installed at the Christmas Tree;
+\item The Temperature and Pressure Transducer (TPT), also a part of the Christmas Tree;
+\item The Production Choke (PCK), installed on the drilling vessel/rig at the top;
+\item The Downhole Safety Valve (DHSV), a safety valve installed in the production tubing of wells
+\end{itemize}
 
 
 \begin{figure}
 \centering
 \includegraphics[width=0.6\textwidth]{offshore_well.png}
-\caption{\label{fig:offshore_well}Schematic of a typical offshore well - source: Petrobras}
+\caption{\label{fig:offshore_well}Schematic of a typical offshore well}
 \end{figure}
+
+Given this, Petrobras, the Brazilian oil company, has developed a data set (3W) that contains data for the most common monitored variables in offshore oil wells. This project aims to understand the relations between these variables and oil well operational anomalies, such as Severe Slugging.
 
 \subsection{Hypothesis}
 The data present in 3W Data Set allows classifier models to predict Severe Slugging with high accuracy.
@@ -205,18 +213,9 @@ The data used in this study was extracted after following the documentation from
 
 \subsection{Data Characterisation}
 
-The data consists of over 50 million observations, with 13 columns of data for each observation. The first column, label, indicates the event type for each observation. The second column, well, contains the name of the well the observation was taken from. Hand-drawn and simulated instances have fixed names for in this column, while real instances have names masked with incremental id. The third column, id, is an identifier for the observation and it is incremental for hand-drawn and simulated instances, while each real instance has an id generated from its first timestamp. The columns representing the process variables are:
+The selected data set consists of 13,952,911 observations, with 14 columns of data for each observation. The first column, label, indicates the event type for each observation. The second column, well, contains the name of the well the observation was taken from. Hand-drawn and simulated instances have fixed names for in this column, while real instances have names masked with incremental id. The third column, id, is an identifier for the observation and it is incremental for hand-drawn and simulated instances, while each real instance has an id generated from its first timestamp. The columns representing the process variables are:
 
-\begin{itemize}
-\item P-PDG: pressure variable at the Permanent Downhole Gauge (PDG) - installed on Christmas Tree;
-\item P-TPT: pressure variable at the Temperature and Pressure Transducer (TPT) - installed on Christmas Tree;
-\item T-TPT: temperature variable at the Temperature and Pressure Transducer (TPT);
-\item P-MON-CKP: pressure variable upstream of the production choke (CKP) - located on platform;
-\item T-JUS-CKP: temperature variable downstream of the production choke (CKP);
-\item P-JUS-CKGL: pressure variable upstream of the gas lift choke (CKGL);
-\item T-JUS-CKGL: temperature variable upstream of the gas lift choke (CKGL);
-\item QGL: gas lift flow rate;
-\end{itemize}
+
 
 The pressure features are measured in Pascal (Pa), the volumetric flow rate features are measured in standard cubic meters per second (SCM/s), and the temperature features are measured in degrees Celsius (°C).
 
@@ -229,19 +228,7 @@ Other information are also loaded into each pandas Dataframe:
 \item class: Although it can be used to identify periods of normal operation, fault transients, and faulty steady states, which can help with diagnosis and maintenance, it is a category which results from label, which is our target here
 \end{itemize}
 
-The labels are:
 
-\begin{itemize}
-\item 0 - Normal Operation = Normal
-\item 1 - Abrupt Increase of BSW = AbrIncrBSW
-\item 2 - Spurious Closure of DHSV = SpurClosDHSW
-\item 3 - Severe Slugging = SevSlug
-\item 4 - Flow Instability = FlowInst
-\item 5 - Rapid Productivity Loss = RProdLoss
-\item 6 - Quick Restriction in PCK = QuiRestrPCK
-\item 7 - Scaling in PCK = ScalingPCK
-\item 8 - Hydrate in Production Line = HydrProdLine
-\end{itemize}
 
 In order to maintain the realistic aspects of the data, the data set was built without pre-processing, including the presence of NaN values, frozen variables due to sensor or communication issues, instances with varying sizes, and outliers \parencite{revvargas2019}.
 
@@ -270,6 +257,21 @@ source & object & type of instance: real, simulated or hand-drawn \\
 \end{tabular}
 \caption{\label{tab:widgets}Summary of the data set compiled from real instances}
 \end{table}
+
+
+The labels are:
+
+\begin{itemize}
+\item 0 - Normal Operation = Normal
+\item 1 - Abrupt Increase of BSW = AbrIncrBSW
+\item 2 - Spurious Closure of DHSV = SpurClosDHSW
+\item 3 - Severe Slugging = SevSlug
+\item 4 - Flow Instability = FlowInst
+\item 5 - Rapid Productivity Loss = RProdLoss
+\item 6 - Quick Restriction in PCK = QuiRestrPCK
+\item 7 - Scaling in PCK = ScalingPCK
+\item 8 - Hydrate in Production Line = HydrProdLine
+\end{itemize}
 
 \subsection{Exploratory Data Analysis}
 
@@ -597,6 +599,13 @@ grid_search_lsvc = GridSearchCV(
 grid_search_lsvc.fit(X_train, y_train)
 \end{lstlisting}
 
+After this, the pipeline was defined with the best parameters found:
+\begin{enumerate}
+    \item StandardScaler()
+    \item PCA(n\_components=3)
+    \item LinearSVC(C=0.01, class\_weight='balanced', dual=False, penalty='l1')
+\end{enumerate}
+
 \subsubsection{Model training}
 Then the model was trained using a similar pipeline, but this time with the optimal combination of parameters.
 
@@ -653,6 +662,13 @@ grid_search_knn = GridSearchCV(
 
 grid_search_knn.fit(X_train, y_train)
 \end{lstlisting}
+
+Then, the pipeline was redefined with the best parameters found considering the proposed scenario:
+\begin{enumerate}
+    \item StandardScaler()
+    \item PCA(n\_components=4)
+    \item KNeighborsClassifier(n\_neighbors=3)
+\end{enumerate}
 
 \subsubsection{Model training}
 Then the model was trained using a similar pipeline, but this time with the optimal combination of parameters.
@@ -753,6 +769,13 @@ grid_search_ann = GridSearchCV(
 grid_search_ann.fit(X_train_, y_train_)
 \end{lstlisting}
 
+At this point, the best parameters found considering the proposed scenario were:
+\begin{itemize}
+    \item Number of Hidden Layers = 4
+    \item Number of Units = 7
+    \item StandardScaler() was set as scaling method.
+\end{itemize}    
+
 In order to monitor the history of the loss evolution according the number of epochs, the \emph{callback} parameter in the model \emph{fit} method should be included, then the history could be assign to a variable. However, as the history object was not accessible by the pipeline, the model was scaled and trained separately to generate this history.
 
 \begin{lstlisting}[language=Python]
@@ -803,7 +826,7 @@ plt.show()
 
 \subsubsection{Model training}
 
-Finally, the model was trained using a similar pipeline, with the optimal combination of parameters and the proper amount of epochs. The final configuration of this model is visible on Figure \ref{fig:nn_plot}.
+Finally, the model was trained using a similar pipeline, with the optimal combination of parameters and the 8 epochs. The final configuration of this model is visible on Figure \ref{fig:nn_plot}.
 
 \begin{figure}
 \centering
@@ -827,7 +850,7 @@ ann_pipeline = Pipeline([
 ann_pipeline.fit(
     X_train, 
     y_train,     
-    ann_model__epochs=5, 
+    ann_model__epochs=8, 
     ann_model__verbose=0
 )
 \end{lstlisting}
@@ -993,12 +1016,12 @@ print(cr_ann)
 \begin{verbatim}    
               precision    recall  f1-score   support
 
-           0     0.9980    0.9831    0.9905   2763432
-           1     0.7795    0.9688    0.8639    170839
+           0     0.9990    0.9857    0.9923   2763432
+           1     0.8101    0.9839    0.8885    170839
 
-    accuracy                         0.9822   2934271
-   macro avg     0.8888    0.9759    0.9272   2934271
-weighted avg     0.9853    0.9822    0.9831   2934271
+    accuracy                         0.9856   2934271
+   macro avg     0.9045    0.9848    0.9404   2934271
+weighted avg     0.9880    0.9856    0.9863   2934271
 \end{verbatim}
 
 \subsubsection{Decision Tree}
