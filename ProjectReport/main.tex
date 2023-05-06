@@ -167,7 +167,7 @@ Success will be defined as the ability to accurately predict one or more of the 
 
 \subsection{Methodologies and Technologies}
 
-The methodology that guided the iterations this project was CRISP-DM. Given this, a number of libraries were used throughout this process to support most of its distinct stages, that is, Data Understanding, Data Preparation, Modeling, and Evaluation. 
+The methodology that guided this project was \emph{CRISP-DM}, which is most widely adopted methodology for data mining, analytics, and data science projects \parencite{ibm_crisp_dm}. Given this, a number of software libraries and modules were used throughout this process to support some of its distinct stages, that is, Data Understanding, Data Preparation, Modeling, and Evaluation. 
 
 Once the methodology was defined, Petrobras' \emph{3W Tool Kit} was studied and used to extract the data from the instances interesting to the project, that is, from the real instances that effectively presented the Severe Slugging event.
 
@@ -259,7 +259,7 @@ source & object & type of instance: real, simulated or hand-drawn \\
 \end{table}
 
 
-The labels are:
+The labels for the possibel undesirable events found in the data set are:
 
 \begin{itemize}
 \item 0 - Normal Operation = Normal
@@ -690,149 +690,167 @@ knn_pipeline.fit(X_train, y_train)
 
 \subsection{Artificial Neural Network}
 
-A Neural Network was also implemented as part of this benchmark. For this model, before optimising hyperparameters, it was necessary to define a function that created the proper neural network using Keras library. 
-
-\subsubsection{Model definition}
-The amount of units and hidden layers in this model was specified during hyperparameter optimisation, as this function was defined with two arguments, namely \emph{num\_units} and \emph{num\_hidden\_layers}, respectively defined with default values 10 and 1.
+In this subsection, \emph{Keras} was used to define a baseline model using Neural Networks, as it can be seen below. Also the parameter \emph{batch\_size} was set as 2048, a relatively high value for this parameter, but important to increase the chance of having some positive samples in each batch.
 
 \begin{lstlisting}[language=Python]
 import tensorflow as tf
-from keras.wrappers.scikit_learn import KerasClassifier
-from keras.models import Sequential
-from keras.layers import Dense
+from tensorflow import keras
+from keras import backend as K
 
-def build_clf(num_units=10, num_hidden_layers=1):
-    # initialising Sequential model and adding layers to it
-    ann_clf = tf.keras.models.Sequential()
-    
-    # adding hidden layers
-    for i in range(num_hidden_layers):
-        ann_clf.add(tf.keras.layers.Dense(units=num_units, activation='relu'))
-
-    # adding output layer
-    ann_clf.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
-    
-    # compiling model with chosen optimizer, loss function, and evaluation metrics
-    ann_clf.compile(
-        optimizer='adam',
-        loss='binary_crossentropy',
-        metrics=['accuracy']
-    )
-    
-    return ann_clf
+BATCH_SIZE = 2048
 \end{lstlisting}
 
-Also, the training data was split again to monitor the loss value and to find the best number of epochs on a further step, and this way this validation data was not considered by the model.
+\subsubsection{Data Preparation for Keras}
+
+For this model, a distinct approach to prepare the data set was adopted. Firstly, the original imbalanced clean data set was copied and split with the same parameter \emph{random\_state=42} used to generate the training data set used to fit and test the other models in this project. Secondly, the resulting train data set from this process was split again into train set and validation set.
+
+Then, the validation set was only used during the model fitting to evaluate the loss, precision, recall and accuracy - however the model was not fit with this data. As a consequence, the test set was completely isolated during the training stage and was only used to evaluate how well the model generalizes to new data. 
+
+This approach is highly recommended to avoid over-fitting, which is a constant concern due to a possible lack of training data in imbalanced data sets \parencite{tensorflow2015-whitepaper} like the one used in this project, where the number of examples not presenting Severe Slugging class greatly outnumbered the examples presenting it.
+
+Given this, the processes adopted for the data set in this section for data cleaning and scaling were the same processes adopted for the other models in this project, however the data is not balanced at this points. These adjustments were necessary to fulfill the requirements of a similar model described in TensorFlow Tutorial provided by \textcite{tensorflow2015-whitepaper}. The code that had performed these tasks can be see below. 
 
 \begin{lstlisting}[language=Python]
-X_train_, X_val, y_train_, y_val = train_test_split(
-    X_train, y_train, 
-    test_size=0.3, random_state=42
-)
+ann_df = df_feat.copy() # copying the imbalanced but clean data set
 
-[X_train_.shape, X_val.shape, y_train_.shape, y_val.shape]
+non_sev_slug, sev_slug = np.bincount(ann_df['SevSlug'])
+
+total = non_sev_slug + sev_slug
+print('Examples:\n    Total: {}\n    SevSlug: {} ({:.2f}% of total)\n'.format(
+    total, sev_slug, 100 * sev_slug / total))
 \end{lstlisting}
 \begin{verbatim}
-[(556518, 7), (238508, 7), (556518,), (238508,)]
+Examples:
+    Total: 9780901
+    SevSlug: 568352 (5.81% of total)
 \end{verbatim}
 
-\subsubsection{Hyperparameter optimisation}
-For finding the best parameters for this model, the hyperparameters to tune the model were specified. Then a pipeline was created with 2 steps:
-\begin{enumerate}
-\item \emph{scaler} which uses StandardScaler method to scale the data
-\item \emph{annmodel} which applies the Sequential model.
-\end{enumerate}
-
-Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
 \begin{lstlisting}[language=Python]
-param_grid = {
-    'ann_model__num_units': [3, 4, 5, 6, 7],
-    'ann_model__num_hidden_layers': [2, 3, 4]
-}
-
-# creating an instance of the KerasClassifier using the defined function 
-ann_model = KerasClassifier(build_fn=build_clf, verbose=0)
-
-ann_pipeline = Pipeline([
-    ('scaler',scaler_pipeline), 
-    ('ann_model',ann_model)
-])
-
-grid_search_ann = GridSearchCV(
-    ann_pipeline,
-    param_grid=param_grid,
-    n_jobs=-1,
-    scoring='accuracy',
-    verbose=0
-)
-
-grid_search_ann.fit(X_train_, y_train_)
+# Dropping redundant columns for this project
+ann_df.pop('timestamp')
+ann_df.pop('well')
+ann_df.columns
 \end{lstlisting}
-
-At this point, the best parameters found considering the proposed scenario were:
-\begin{itemize}
-    \item Number of Hidden Layers = 4
-    \item Number of Units = 7
-    \item StandardScaler() was set as scaling method.
-\end{itemize}    
-
-In order to monitor the history of the loss evolution according the number of epochs, the \emph{callback} parameter in the model \emph{fit} method should be included, then the history could be assign to a variable. However, as the history object was not accessible by the pipeline, the model was scaled and trained separately to generate this history.
+\begin{verbatim}
+Index(['P-PDG', 'P-TPT', 'T-TPT', 'P-MON-CKP', 'T-JUS-CKP', 'P-JUS-CKGL',
+       'QGL', 'SevSlug'],
+      dtype='object')
+\end{verbatim}
 
 \begin{lstlisting}[language=Python]
-from keras import callbacks
+# Splitting data
+ann_train_df, ann_test_df = train_test_split(ann_df, test_size=0.3, random_state=42)
+ann_train_df, ann_val_df = train_test_split(ann_train_df, test_size=0.3)
 
-earlystopping = callbacks.EarlyStopping(
-    monitor="val_loss", mode="min", patience=5, restore_best_weights=True, 
-    verbose=-1
-)
+# Form np arrays of labels and features
+train_labels = np.array(ann_train_df.pop('SevSlug'))
+bool_train_labels = train_labels != 0
+val_labels = np.array(ann_val_df.pop('SevSlug'))
+test_labels = np.array(ann_test_df.pop('SevSlug'))
 
-ann_model_ = KerasClassifier(
-    build_fn=build_clf, 
-    num_hidden_layers=grid_search_ann.best_params_['ann_model__num_hidden_layers'], 
-    num_units=grid_search_ann.best_params_['ann_model__num_units'], 
-    verbose=1
-)
-
-scaler_pipeline.fit(X_val)
-X_val = scaler_pipeline.transform(X_val)
-
-history = ann_model_.fit(X_train_, y_train_, 
-    epochs=15, 
-    verbose=0,
-    validation_data=(X_val, y_val),
-    callbacks=[earlystopping]
-)
+train_features = np.array(ann_train_df)
+val_features = np.array(ann_val_df)
+test_features = np.array(ann_test_df)
 \end{lstlisting}
-
-The loss according the number of epochs on training and validation data can be seen on Figure \ref{fig:loss_vs_epochs} and a chart was created by the following code.
-
-\begin{figure}
-\centering
-\includegraphics[width=0.7\textwidth]{loss_vs_epochs.png}
-\caption{\label{fig:loss_vs_epochs}The training and validation loss for a neural network model trained over 15 epochs with early stopping}
-\end{figure}
 
 \begin{lstlisting}[language=Python]
-# plotting the training and validation loss
-fig, (ax1) = plt.subplots(1, figsize=(5, 3))
-ax1.plot(history.history['loss'])
-ax1.plot(history.history['val_loss'],'o')
-ax1.set_xlabel('Epochs')
-ax1.set_ylabel('Loss')
-ax1.legend(['Training loss', 'Validation loss'])
+# Normalising data with a previously instantiated StandardScaler
+train_features = scaler.fit_transform(train_features)
+val_features = scaler.transform(val_features)
+test_features = scaler.transform(test_features)
 
-plt.show()
+print('ANN Training labels shape:', train_labels.shape)
+print('ANN Validation labels shape:', val_labels.shape)
+print('Test labels shape:', test_labels.shape)
+
+print('ANN Training features shape:', train_features.shape)
+print('ANN Validation features shape:', val_features.shape)
+print('Test features shape:', test_features.shape)
 \end{lstlisting}
+\begin{verbatim}
+ANN Training labels shape: (4792641,)
+ANN Validation labels shape: (2053989,)
+Test labels shape: (2934271,)
+ANN Training features shape: (4792641, 7)
+ANN Validation features shape: (2053989, 7)
+Test features shape: (2934271, 7)
+\end{verbatim}
 
-\subsubsection{Model training}
+\subsubsection{Model definition}
+Instead of using GridSearchCV to tune hyperparameters like in other models in this project, an initial model was defined and then after analysing its results the initial bias was fixed. Then the model was trained again and had its resulting metrics evaluated considering the validation data set. In the following code the implementation of this initial model is described after listing some metrics available in Keras library that were used to evaluate the model.  
 
-Finally, the model was trained using a similar pipeline, with the optimal combination of parameters and the 8 epochs. The final configuration of this model is visible on Figure \ref{fig:nn_plot}.
+The architecture of this model is visible on Figure \ref{fig:nn_plot} and it has one input layer representing all 7 features from the data set, one densely connected hidden layer with 16 units, a dropout layer to mitigate over-fitting and an one-unit output layer that returns the probability of Severe Slugging.
+
+\begin{lstlisting}[language=Python]
+ANN_METRICS = [
+    keras.metrics.TruePositives(name='tp'),
+    keras.metrics.FalsePositives(name='fp'),
+    keras.metrics.TrueNegatives(name='tn'),
+    keras.metrics.FalseNegatives(name='fn'), 
+    keras.metrics.BinaryAccuracy(name='accuracy'),
+    keras.metrics.Precision(name='precision'),
+    keras.metrics.Recall(name='recall'),
+    keras.metrics.AUC(name='auc'),
+    keras.metrics.AUC(name='prc', curve='PR'), # precision-recall curve
+]
+
+def make_model(metrics=ANN_METRICS, output_bias=None):
+    if output_bias is not None:
+        output_bias = tf.keras.initializers.Constant(output_bias)
+    model = keras.Sequential([
+        keras.layers.Dense(16, activation='relu',input_shape=(train_features.shape[-1],)),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(1, activation='sigmoid',bias_initializer=output_bias),
+    ])
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+        loss=keras.losses.BinaryCrossentropy(),
+        metrics=metrics)
+
+    return model
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+EPOCHS = 100
+
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor='val_prc', 
+    verbose=1,
+    patience=10,
+    mode='max',
+    restore_best_weights=True)
+
+ann_model = make_model()
+ann_model.summary()
+\end{lstlisting}
+\begin{verbatim}
+Model: "sequential_5"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ dense_10 (Dense)            (None, 16)                128       
+                                                                 
+ dropout_5 (Dropout)         (None, 16)                0         
+                                                                 
+ dense_11 (Dense)            (None, 1)                 17        
+                                                                 
+=================================================================
+Total params: 145 (580.00 Byte)
+Trainable params: 145 (580.00 Byte)
+Non-trainable params: 0 (0.00 Byte)
+\end{verbatim}
+
+
 
 \begin{figure}
 \centering
 \includegraphics[width=0.35\textwidth]{nn_plot.png}
 \caption{\label{fig:nn_plot}The architecture of a neural network model built using Keras}
 \end{figure}
+
+\subsubsection{Model training}
+
+
 
 \begin{lstlisting}[language=Python]
 ann_model = KerasClassifier(
