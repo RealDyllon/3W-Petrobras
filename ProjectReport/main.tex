@@ -1348,14 +1348,11 @@ models = [
 ]
 \end{lstlisting}
 
-An empty dictionary to host the results for the cross-validation was initialised.
+After an empty dictionary to host the results from the cross-validation was initialised, a 10-fold cross-validation for each model (except ANN) was computed for 3 metrics, namely: accuracy, precision and recall.
+
 \begin{lstlisting}[language=Python]
 cross_validation_dict = dict()
-\end{lstlisting}
 
-Then a 10-fold cross-validation for each model (except ANN) was computed for 3 metrics, namely, accuracy, precision and recall.
-
-\begin{lstlisting}[language=Python]
 cv_metrics = ['accuracy','precision','recall']
 
 cross_validation_dict = {name: {} for name, _ in models}
