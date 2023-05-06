@@ -777,7 +777,7 @@ Test features shape: (2934271, 7)
 \end{verbatim}
 
 \subsubsection{Model definition}
-Instead of using GridSearchCV to tune hyperparameters like in other models in this project, an initial model was defined and then after analysing its results the initial bias was fixed. Then the model was trained again and had its resulting metrics evaluated considering the validation data set. In the following code the implementation of this initial model is described after listing some metrics available in Keras library that were used to evaluate the model.  
+Instead of using GridSearchCV to tune hyper-parameters like in other models in this project, an initial model was defined and then after analysing its results the initial bias was fixed. Then the model was trained again and had its resulting metrics evaluated considering the validation data set. In the following code the implementation of this initial model is described after listing some metrics available in Keras library that were used to evaluate the model.  
 
 The architecture of this model is visible on Figure \ref{fig:nn_plot} and it has one input layer representing all 7 features from the data set, one densely connected hidden layer with 16 units, a dropout layer to mitigate over-fitting and an one-unit output layer that returns the probability of Severe Slugging.
 
@@ -810,6 +810,9 @@ def make_model(metrics=ANN_METRICS, output_bias=None):
 
     return model
 \end{lstlisting}
+
+The number of epochs used as a reference for this model in this project was 100, however it was not reached, because a resource called \emph{EarlyStopping} was implemented to interrupt the training if a monitored metric has stopped improving. In this resource, the parameter \emph{patience} can be set to make the training more tolerant to possible oscillations in the monitored metric throughout the epochs and the monitored metric here is the \emph{validation precision-recall curve}, which evidences the trade-off between precision and recall for different threshold.
+
 \begin{lstlisting}[language=Python]
 EPOCHS = 100
 
@@ -848,34 +851,176 @@ Non-trainable params: 0 (0.00 Byte)
 \caption{\label{fig:nn_plot}The architecture of a neural network model built using Keras}
 \end{figure}
 
-\subsubsection{Model training}
-
-
+Finally, the newly-created model could be briefly tested:
 
 \begin{lstlisting}[language=Python]
-ann_model = KerasClassifier(
-    build_fn=build_clf,
-    num_units=grid_search_ann.best_params_['ann_model__num_units'],
-    num_hidden_layers=grid_search_ann.best_params_['ann_model__num_hidden_layers'],
-    verbose=0
-)
+ann_model.predict(train_features[:10])
+\end{lstlisting}
+\begin{verbatim}
+1/1 [==============================] - 0s 99ms/step
+array([[0.21003543],
+       [0.61643285],
+       [0.6023897 ],
+       [0.62401986],
+       [0.62409544],
+       [0.21703976],
+       [0.2112424 ],
+       [0.62370116],
+       [0.6251195 ],
+       [0.6153809 ]], dtype=float32)
+\end{verbatim}
 
-ann_pipeline = Pipeline([
-    ('scaler', scaler_pipeline), 
-    ('ann_model', ann_model)
-])
+\subsubsection{Handling The Model Bias}
+Since the data set is imbalanced, there was an inherent bias in the first results. Given this default bias, the loss can be computed as in the following code:
 
-ann_pipeline.fit(
-    X_train, 
-    y_train,     
-    ann_model__epochs=8, 
-    ann_model__verbose=0
-)
+\begin{lstlisting}[language=Python]
+results = ann_model.evaluate(train_features, train_labels, batch_size=BATCH_SIZE, verbose=0)
+print("Loss: {:0.4f}".format(results[0]))
+\end{lstlisting}
+\begin{verbatim}
+Loss: 0.9903
+\end{verbatim}
+
+The correct bias can be computed as in the following code:
+\begin{lstlisting}[language=Python]
+initial_bias = np.log([sev_slug / non_sev_slug]) 
+initial_bias
+\end{lstlisting}
+\begin{verbatim}
+array([-2.78558091])
+\end{verbatim}
+
+Once the initial bias was computed, the model presented more reasonable initial guesses.
+\begin{lstlisting}[language=Python]
+ann_model = make_model(output_bias=initial_bias)
+ann_model.predict(train_features[:10])
+\end{lstlisting}
+\begin{verbatim}
+1/1 [==============================] - 0s 55ms/step
+array([[0.03573601],
+       [0.03519705],
+       [0.03306021],
+       [0.04497113],
+       [0.045381  ],
+       [0.03489733],
+       [0.03468524],
+       [0.04532901],
+       [0.04532651],
+       [0.03519929]], dtype=float32)
+\end{verbatim}
+
+As a result, the loss was significantly reduced in comparison to the loss found with the naive initialisation, that is, it was reduced from 0.9903 to 0.1167 - see the code below. Additionally, the model did not have to spend the first epochs registering that Severe Slugging only occurred in the minority of the records.
+
+\begin{lstlisting}[language=Python]
+results = ann_model.evaluate(train_features, train_labels, batch_size=BATCH_SIZE, verbose=0)
+print("Loss: {:0.4f}".format(results[0]))
+\end{lstlisting}
+\begin{verbatim}
+Loss: 0.1167
+\end{verbatim}
+
+The bias adjustment could be confirmed after training the model for 20 epochs with the default initialization and then training it again with this careful initialisation and then the comparison between the losses could be visualised in Figure \ref{fig:loss_vs_epochs} :
+
+\begin{lstlisting}[language=Python]
+initial_weights = os.path.join(tempfile.mkdtemp(), 'initial_weights')
+ann_model.save_weights(initial_weights)
+
+# Confirming that the bias fix helps
+ann_model = make_model()
+ann_model.load_weights(initial_weights)
+ann_model.layers[-1].bias.assign([0.0]) 
+
+zero_bias_history = ann_model.fit(
+    train_features,
+    train_labels,
+    batch_size=BATCH_SIZE,
+    epochs=20,
+    validation_data=(val_features, val_labels), 
+    verbose=0)
 \end{lstlisting}
 
+\begin{lstlisting}[language=Python]
+ann_model = make_model()
+ann_model.load_weights(initial_weights) # adjusted bias
 
+careful_bias_history = ann_model.fit(
+    train_features,
+    train_labels,
+    batch_size=BATCH_SIZE,
+    epochs=20,
+    validation_data=(val_features, val_labels), 
+    verbose=0)
+\end{lstlisting}
 
+Then a line chart (see Figure \ref{fig:loss_vs_epochs}) comparing both scenarios was plotted with the following function:
+\begin{lstlisting}[language=Python]
+mpl.rcParams['figure.figsize'] = (12, 10)
+colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
+def plot_loss(history, label, n):
+    # Using a log scale on y-axis to show the wide range of values.
+    plt.semilogy(history.epoch, history.history['loss'], color=colors[n], label='Train ' + label) 
+    plt.semilogy(history.epoch, history.history['val_loss'], color=colors[n], label='Val ' + label, linestyle="--")
+    
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+\end{lstlisting}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{loss_vs_epochs.png}
+\caption{\label{fig:loss_vs_epochs}Comparison between validation loss before and after bias adjustment}
+\end{figure}
+
+\subsubsection{Model Training}
+
+After fixing the default bias, the model training stage could be fully started with 100 epochs while the precision-recall curve (PRC) of validation data set was being monitored. 
+
+\begin{lstlisting}[language=Python]
+ann_model = make_model()
+ann_model.load_weights(initial_weights)
+
+baseline_history = ann_model.fit(
+    train_features,
+    train_labels,
+    batch_size=BATCH_SIZE,
+    epochs=EPOCHS,
+    callbacks=[early_stopping],
+    validation_data=(val_features, val_labels))
+\end{lstlisting}
+
+Also, the training history was recorded to verify over-fitting and to collect data for visualise some relevant metrics in this project, as they can be seen on Figure \ref{fig:ann_metrics}. The code used to plot the metrics is below:
+
+\begin{lstlisting}[language=Python]
+def plot_metrics(history):
+    metrics = ['loss', 'prc', 'precision', 'recall']
+    
+    for n, metric in enumerate(metrics):
+        name = metric.replace("_"," ").capitalize()
+        plt.subplot(2,2,n+1)
+        plt.plot(history.epoch, history.history[metric], color=colors[0], label='Train')
+        plt.plot(history.epoch, history.history['val_' + metric],
+                 color=colors[0], linestyle="--", label='Val')
+        plt.xlabel('Epoch')
+        plt.ylabel(name)
+        
+        if metric == 'loss':
+            plt.ylim([0, plt.ylim()[1]])
+        else:
+            plt.ylim([0,1])
+
+        plt.legend()
+
+plot_metrics(baseline_history)
+\end{lstlisting}
+
+Ultimately, the training process was interrupted by the resource \emph{EarlyStopping} after 58 epochs after not registering a better PRC for 10 epochs. More details about the metrics were presented at Evaluation section of this project.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{ann_metrics.png}
+\caption{\label{fig:ann_metrics}Metrics History After 58 Epochs}
+\end{figure}
 
 \subsection{Decision Tree Classifier}
 As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Decision Tree Classifier was implemented as part of this benchmark.
