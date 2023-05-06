@@ -560,7 +560,16 @@ Accuracy:  0.9417780429960286
 \end{verbatim}
 
 \subsection{LinearSVC}
-Although the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a linear support vector classifier (LinearSVC) was implemented as part of this benchmark.
+Although the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a linear support vector classifier (LinearSVC) was implemented as part of this benchmark. The code below retrieved a previously trained LinearSVC model which was persisted as a Pickle file, then it predicted the class labels for the features in \emph{X\_test}, and finally generated the respective Classification Report in comparison with the labels in \emph{y\_test}.
+
+\begin{lstlisting}[language=Python]
+with open(os.path.join('pickle', 'linear_svc_pipeline.pkl'), 'rb') as f:
+linear_svc_pipeline = pickle.load(f)
+    
+y_predicted_lin_clf = linear_svc_pipeline.predict(X_test)    
+
+cr_linearsvc = metrics.classification_report(y_test, y_predicted_lin_clf, digits=4)
+\end{lstlisting}
 
 \subsubsection{Hyperparameter optimisation}
 For finding the best parameters for this model, the hyperparameters to tune PCA and the model were specified. Then a pipeline was created with 3 steps:
@@ -570,7 +579,7 @@ For finding the best parameters for this model, the hyperparameters to tune PCA 
 \item \emph{linearsvc} which applies the LinearSVC model.
 \end{enumerate}
 
-Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
+Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best f1 metric with the default cross-validation, that is, a 5-fold cross-validation.
 \begin{lstlisting}[language=Python]
 from sklearn.svm import LinearSVC
 
@@ -592,7 +601,7 @@ grid_search_lsvc = GridSearchCV(
     linear_svc_pipeline,
     param_grid=param_grid,
     n_jobs=-1,
-    scoring='accuracy',
+    scoring='f1',
     verbose=1
 )
 
@@ -627,7 +636,16 @@ linear_svc_pipeline.fit(X_train, y_train)
 \end{lstlisting}
 
 \subsection{k-Nearest Neighbors Classifier}
-A k-Nearest Neighbors Classifier (KNeighborsClassifier) was implemented as part of this benchmark.
+A k-Nearest Neighbors Classifier (KNeighborsClassifier) was implemented as part of this benchmark. The code below retrieved a previously trained KNeighborsClassifier model which was persisted as a Pickle file, then it predicted the class labels for the features in \emph{X\_test}, and finally generated the respective Classification Report in comparison with the labels in \emph{y\_test}.
+
+\begin{lstlisting}[language=Python]
+with open(os.path.join('pickle', 'knn_pipeline.pkl'), 'rb') as f:    
+    knn_pipeline = pickle.load(f)
+    
+y_predicted_knn = knn_pipeline.predict(X_test)
+
+cr_knn = metrics.classification_report(y_test, y_predicted_knn, digits=5)    
+\end{lstlisting}
 
 \subsubsection{Hyperparameter optimisation}
 For finding the best parameters for this model, the hyperparameters to tune PCA and the model were specified. Then a pipeline was created with 3 steps:
@@ -656,7 +674,7 @@ grid_search_knn = GridSearchCV(
     knn_pipeline,
     param_grid=param_grid,
     n_jobs=-1,
-    scoring='accuracy',
+    scoring='f1',
     verbose=1
 )
 
@@ -690,7 +708,7 @@ knn_pipeline.fit(X_train, y_train)
 
 \subsection{Artificial Neural Network}
 
-In this subsection, \emph{Keras} was used to define a baseline model using Neural Networks, as it can be seen below. Also the parameter \emph{batch\_size} was set as 2048, a relatively high value for this parameter, but important to increase the chance of having some positive samples in each batch.
+In this subsection, \emph{Keras} and \emph{Tensorflow} libraries were used to define a baseline model using Artificial Neural Network (ANN). Similar to previous models, the code below could retrieve a previously trained ANN model which was persisted as a Pickle file, then it predicted the class labels for the features in \emph{X\_test} after normalisation and adjusting the data type using \emph{Numpy} function. After this, the corresponding Classification Report in comparison with the labels in \emph{y\_test} was generated. 
 
 \begin{lstlisting}[language=Python]
 import tensorflow as tf
@@ -698,7 +716,25 @@ from tensorflow import keras
 from keras import backend as K
 
 BATCH_SIZE = 2048
+
+with open(os.path.join('pickle', 'ann_model.pkl'), 'rb') as f: 
+    ann_model_ = pickle.load(f)
+    
+scaler = StandardScaler()    
+
+X_test_scaled = scaler.fit_transform(X_test)
+
+y_predicted_ann = ann_model_.predict(np.array(X_test_scaled), batch_size=BATCH_SIZE)
+y_predicted_ann = y_predicted_ann.flatten()
+y_predicted_ann = np.where(y_predicted_ann.round(2) > 0.5, 1, 0)
+
+cr_ann = metrics.classification_report(y_test, y_predicted_ann, digits=5)    
 \end{lstlisting}
+\begin{verbatim}
+1433/1433 [==============================] - 1s 777us/step
+\end{verbatim}
+
+Also the parameter \emph{batch\_size} was set as 2048, a relatively high value for this parameter, but capable to increase the chance of having some positive samples in each batch.
 
 \subsubsection{Data Preparation for Keras}
 
@@ -1023,7 +1059,16 @@ Ultimately, the training process was interrupted by the resource \emph{EarlyStop
 \end{figure}
 
 \subsection{Decision Tree Classifier}
-As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Decision Tree Classifier was implemented as part of this benchmark.
+As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Decision Tree Classifier was implemented as part of this benchmark. The code below retrieved a previously trained Decision Tree model which was persisted as a Pickle file, then it predicted the class labels for the features in \emph{X\_test}, and finally generated the respective Classification Report in comparison with the labels in \emph{y\_test}.
+
+\begin{lstlisting}[language=Python]
+with open(os.path.join('pickle', 'tree_pipeline.pkl'), 'rb') as f:     
+    tree_pipeline = pickle.load(f)
+    
+y_predicted_tree = tree_pipeline.predict(X_test)
+
+cr_tree = metrics.classification_report(y_test, y_predicted_tree, digits=5)
+\end{lstlisting}
 
 \subsubsection{Hyperparameter optimisation}
 For finding the best parameters for this model, the hyperparameters to tune the model were specified. Then a pipeline was created with 1 step:
@@ -1031,8 +1076,10 @@ For finding the best parameters for this model, the hyperparameters to tune the 
 \item \emph{decisiontreeclassifier} which applies the Decision Tree model.
 \end{enumerate}
 
-Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
+Then, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
 \begin{lstlisting}[language=Python]
+from sklearn.tree import DecisionTreeClassifier
+
 tree_pipeline = Pipeline([
     ('decisiontreeclassifier', DecisionTreeClassifier())
 ])
@@ -1047,14 +1094,14 @@ grid_search_tree = GridSearchCV(
     tree_pipeline,
     param_grid=param_grid,
     n_jobs=-1,
-    scoring='accuracy',
+    scoring='f1',
     verbose=1
 )
 
 grid_search_tree.fit(X_train, y_train)
 \end{lstlisting}
 
-Then, the one-step pipeline was redefined with the best parameters found considering the proposed scenario:
+After this, the one-step pipeline was redefined with the best parameters found considering the proposed scenario for consistency with other models:
 \begin{enumerate}    
     \item DecisionTreeClassifier(max\_features='sqrt')
 \end{enumerate}
@@ -1075,7 +1122,16 @@ tree_pipeline.fit(X_train, y_train)
 \end{lstlisting}
 
 \subsection{Random Forest Classifier} 
-As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Random Forest Classifier was implemented as part of this benchmark.
+As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Random Forest Classifier was implemented as part of this benchmark. The following code loaded a previously trained Random Forest Classifier model which was saved as a Pickle file, then it predicted the class labels for the features in \emph{X\_test}, and finally generated the respective Classification Report in comparison with the labels in \emph{y\_test}.
+
+\begin{lstlisting}
+with open(os.path.join('pickle', 'rf_pipeline.pkl'), 'rb') as f:    
+rf_pipeline = pickle.load(f)
+    
+y_predicted_rf = rf_pipeline.predict(X_test)
+
+cr_rf = metrics.classification_report(y_test, y_predicted_rf, digits=5)
+\end{lstlisting}
 
 \subsubsection{Hyperparameter optimisation}
 For finding the best parameters for this model, the hyperparameters to tune the model were specified. Then a pipeline was created with 1 step:
@@ -1099,7 +1155,7 @@ grid_search_rf = GridSearchCV(
     rf_pipeline,
     param_grid=param_grid,
     n_jobs=-1,
-    scoring='accuracy',
+    scoring='f1',
     verbose=1
 )
 
@@ -1128,26 +1184,7 @@ rf_pipeline.fit(X_train, y_train)
 
 \subsection{Classification Report}
 
-The classification reports for all 5 models were generated by the code below.
-
-\begin{lstlisting}[language=Python]
-# LinearSVC
-cr_linearsvc = metrics.classification_report(y_test, y_predicted_lin_clf, digits=4)
-
-# kNN
-cr_knn = metrics.classification_report(y_test, y_predicted_knn, digits=4)
-
-# Neural Networks
-y_predicted_ann = y_predicted_ann.flatten()
-y_predicted_ann = np.where(y_predicted_ann.round(2) > 0.5, 1, 0)
-cr_ann = metrics.classification_report(y_test, y_predicted_ann, digits=4)
-
-# Decision Tree
-cr_tree = metrics.classification_report(y_test, y_predicted_tree, digits=4)
-
-# Random Forest
-cr_rf = metrics.classification_report(y_test, y_predicted_rf, digits=4)
-\end{lstlisting}
+As it could be seen in Modeling section, the classification reports for all models were generated immediately after they were instantiated and they were all detailed in this section.
 
 \subsubsection{LinearSVC}
 \begin{lstlisting}[language=Python]
@@ -1173,12 +1210,12 @@ print(cr_knn)
 \begin{verbatim}  
               precision    recall  f1-score   support
 
-           0     0.9999    0.9949    0.9974   2763432
-           1     0.9233    0.9979    0.9591    170839
+           0    0.99987   0.99487   0.99736   2763432
+           1    0.92328   0.99787   0.95913    170839
 
-    accuracy                         0.9950   2934271
-   macro avg     0.9616    0.9964    0.9782   2934271
-weighted avg     0.9954    0.9950    0.9951   2934271
+    accuracy                        0.99505   2934271
+   macro avg    0.96157   0.99637   0.97825   2934271
+weighted avg    0.99541   0.99505   0.99514   2934271
 \end{verbatim}
 
 \subsubsection{Neural Networks}
@@ -1189,12 +1226,12 @@ print(cr_ann)
 \begin{verbatim}    
               precision    recall  f1-score   support
 
-           0     0.9990    0.9857    0.9923   2763432
-           1     0.8101    0.9839    0.8885    170839
+           0    0.99321   0.99987   0.99653   2763432
+           1    0.99760   0.88938   0.94039    170839
 
-    accuracy                         0.9856   2934271
-   macro avg     0.9045    0.9848    0.9404   2934271
-weighted avg     0.9880    0.9856    0.9863   2934271
+    accuracy                        0.99343   2934271
+   macro avg    0.99541   0.94462   0.96846   2934271
+weighted avg    0.99346   0.99343   0.99326   2934271
 \end{verbatim}
 
 \subsubsection{Decision Tree}
@@ -1205,12 +1242,12 @@ print(cr_tree)
 \begin{verbatim}
               precision    recall  f1-score   support
 
-           0     1.0000    0.9998    0.9999   2763432
-           1     0.9960    0.9998    0.9979    170839
+           0    0.99999   0.99972   0.99986   2763432
+           1    0.99553   0.99980   0.99766    170839
 
-    accuracy                         0.9998   2934271
-   macro avg     0.9980    0.9998    0.9989   2934271
-weighted avg     0.9998    0.9998    0.9998   2934271
+    accuracy                        0.99973   2934271
+   macro avg    0.99776   0.99976   0.99876   2934271
+weighted avg    0.99973   0.99973   0.99973   2934271
 \end{verbatim}
 
 \subsubsection{Random Forest}
@@ -1221,12 +1258,13 @@ print(cr_rf)
 \begin{verbatim}   
               precision    recall  f1-score   support
 
-           0     1.0000    0.9999    1.0000   2763432
-           1     0.9987    1.0000    0.9993    170839
+           0    1.00000   0.99991   0.99995   2763432
+           1    0.99852   1.00000   0.99926    170839
 
-    accuracy                         0.9999   2934271
-   macro avg     0.9993    1.0000    0.9996   2934271
-weighted avg     0.9999    0.9999    0.9999   2934271
+    accuracy                        0.99991   2934271
+   macro avg    0.99926   0.99995   0.99961   2934271
+weighted avg    0.99991   0.99991   0.99991   2934271
+
 \end{verbatim}
 
 
@@ -1240,52 +1278,163 @@ In this section the confusion matrices for every model for test labels were comp
 \end{figure}
 
 \subsection{10-Fold Cross Validation}
-Finally, a K-Folds cross-validator was selected to split training data set into 10 consecutive folds and compute the mean accuracy and the respective standard deviation for each model. The models were still put on the same pipelines used on modeling section.
+Lastly, a K-Folds cross-validator was selected to split training data set into 10 consecutive folds and compute the mean accuracy and the respective standard deviation for each model. Computing this report with TensorFlow 2.0 and Keras demanded a particular implementation, given the inputs requested by the function which instantiates this model in this project. Moreover, this cross-validation report had to be compatible and conceptually comparable to the reports ordinarily generated by the method \emph{cross\_val\_score)}, that is, it should have the same information and data structure. 
+
+Consequently, a customised 10-fold cross-validation implementation for ANN was built in the following code, which was adapted from a solution proposed by \textcite{christianversloot_2022}
+
+\begin{lstlisting}[language=Python]
+# implementing 10-fold cross-validation for NN
+
+number_folds = 10
+kfold = KFold(n_splits=number_folds, shuffle=True, random_state=42)
+
+acc_per_fold = prec_per_fold = rec_per_fold = loss_per_fold = []
+
+# Merge inputs and targets. 
+# At this point features and labels must be already scaled
+inputs = np.concatenate((train_features, test_features), axis=0)
+targets = np.concatenate((train_labels, test_labels), axis=0)
+
+number_epochs = 58
+
+fold_no = 1
+
+print('#' * 72)
+for train, test in kfold.split(inputs, targets):
+    model = make_model()
+
+    # Generate a print
+    print(f'Fold #{fold_no}...')
+
+    # Fit data to model
+    history = model.fit(
+      inputs[train], targets[train],
+      batch_size=BATCH_SIZE,
+      epochs=number_epochs,
+      verbose=1
+    )
+
+    # Generate generalization metrics
+    scores = model.evaluate(inputs[test], targets[test], batch_size=BATCH_SIZE, verbose=0)
+    
+    print(f'\nScores for Fold #{fold_no}:') 
+    
+    fold_loss = (model.metrics_names[0], scores[0])
+    fold_accu = (model.metrics_names[5], scores[5])
+    fold_prec = (model.metrics_names[6], scores[6])
+    fold_recl = (model.metrics_names[7], scores[7])
+    
+    print(f'{fold_loss[0]} = {fold_loss[1]};')
+    print(f'{fold_accu[0]} = {fold_accu[1]};')
+    print(f'{fold_prec[0]} = {fold_prec[1]};')
+    print(f'{fold_recl[0]} = {fold_recl[1]};')
+
+    loss_per_fold.append(fold_loss[1])
+    acc_per_fold.append(fold_accu[1])
+    prec_per_fold.append(fold_prec[1])
+    rec_per_fold.append(fold_recl[1])
+
+    fold_no = fold_no + 1
+\end{lstlisting}
+
+The other models were still put on the same pipelines used on modeling section.
 
 \begin{lstlisting}[language=Python]
 models = [    
-    ('Random Forest', rf_pipeline), 
     ('Decision Tree', tree_pipeline),
+    ('Linear SVC', linear_svc_pipeline),
     ('KNeighborsClassifier', knn_pipeline),    
-    ('Neural Networks', ann_pipeline), 
-    ('Linear SVC', linear_svc_pipeline)
+    ('Random Forest', rf_pipeline)
 ]
 \end{lstlisting}
-\begin{lstlisting}[language=Python]
-for name, model in models:
-    kfold = KFold(n_splits=10, shuffle=True, random_state=42)
-    
-    cv_results = cross_val_score(model, X_train, y_train, cv=kfold, scoring='accuracy')
-    cross_validation_dict[name] = cv_results
 
-    msg = "%s: %f (%f)" % (name, np.nanmean(cv_results), np.nanstd(cv_results))
-    print(msg)
+An empty dictionary to host the results for the cross-validation was initialised.
+\begin{lstlisting}[language=Python]
+cross_validation_dict = dict()
+\end{lstlisting}
+
+Then a 10-fold cross-validation for each model (except ANN) was computed for 3 metrics, namely, accuracy, precision and recall.
+
+\begin{lstlisting}[language=Python]
+cv_metrics = ['accuracy','precision','recall']
+
+cross_validation_dict = {name: {} for name, _ in models}
+
+for cv_metric in cv_metrics:
+    print(f'\nStarting a {number_folds}-fold CV for {cv_metric}...')
+    for name, model in models:
+        cv_results = cross_val_score(model, X_train, y_train, cv=kfold, scoring=cv_metric)
+        cross_validation_dict[name][cv_metric] = cv_results
+        msg = "-> %s: %f (%f)" % (name, np.nanmean(cv_results), np.nanstd(cv_results))        
+        print(msg)   
 \end{lstlisting}
 \begin{verbatim}
-Random Forest: 0.999940 (0.000018)
-Decision Tree: 0.999826 (0.000069)
-KNeighborsClassifier: 0.998610 (0.000138)
-Neural Networks: 0.978187 (0.001739)
-Linear SVC: 0.974343 (0.000403)
+Starting a 10-fold CV for accuracy...
+-> Decision Tree: 0.999781 (0.000063)
+-> Linear SVC: 0.974574 (0.000481)
+-> KNeighborsClassifier: 0.996025 (0.000240)
+-> Random Forest: 0.999948 (0.000022)
+
+Starting a 10-fold CV for precision...
+-> Decision Tree: 0.999718 (0.000098)
+-> Linear SVC: 0.980681 (0.000688)
+-> KNeighborsClassifier: 0.994433 (0.000448)
+-> Random Forest: 0.999902 (0.000047)
+
+Starting a 10-fold CV for recall...
+-> Decision Tree: 0.999844 (0.000089)
+-> Linear SVC: 0.968222 (0.000686)
+-> KNeighborsClassifier: 0.997635 (0.000242)
+-> Random Forest: 0.999995 (0.000010)
 \end{verbatim}
 
-The following code was implemented to plot how the mean score after cross validation was distributed in each model. This chart can be visualised on Figure \ref{fig:10_fold_cv}.
+After this, the cross-validation results computed for ANN were added to the cross-validation dictionary.
+
+\begin{lstlisting}
+cv_val_dict = cross_validation_dict
+
+cv_val_dict['Neural Networks'] = dict()
+cv_val_dict['Neural Networks']['accuracy'] = np.array(acc_per_fold)
+cv_val_dict['Neural Networks']['precision'] = np.array(prec_per_fold)
+cv_val_dict['Neural Networks']['recall'] = np.array(rec_per_fold)    
+
+models.append(('Neural Networks', False))
+\end{lstlisting}
+
+The following code was implemented to plot how each metric averaged in each model. These corresponding charts can be visualised on Figures \ref{fig:10_fold_acc}, \ref{fig:10_fold_prec} and \ref{fig:10_fold_rec}.
 
 \begin{lstlisting}[language=Python]
-# comparing algorithms
-fig = plt.figure()
-fig.suptitle('Distribution of Mean Score After 10-fold Cross Validation By Algorithm')
-ax = fig.add_subplot(111)
-plt.boxplot(cross_validation_dict.values())
-ax.set_xticklabels(cross_validation_dict.keys())
-fig.set_size_inches(8,4)
-plt.show()
+def plot_metric_boxplot(metric, cv_val_dict, number_folds):
+    data = [cv_val_dict[model][metric] for model in cv_val_dict.keys()]
+    fig = plt.figure()
+    fig.suptitle(f'Distribution of Mean {metric.capitalize()} After {number_folds}-Fold Cross Validation By Algorithm')
+    ax = fig.add_subplot(111)
+    plt.boxplot(data)
+    ax.set_xticklabels(cv_val_dict.keys())
+    fig.set_size_inches(8,4)
+    plt.show()
+
+plot_metric_boxplot('accuracy', cv_val_dict, number_folds)
+plot_metric_boxplot('precision', cv_val_dict, number_folds)
+plot_metric_boxplot('recall', cv_val_dict, number_folds)
 \end{lstlisting}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.75\textwidth]{10_fold_cv.png}
-\caption{\label{fig:10_fold_cv}Box plots showing the distribution of Mean Score After 10-fold Cross Validation By Algorithm}
+\includegraphics[width=0.75\textwidth]{10_fold_acc.png}
+\caption{\label{fig:10_fold_acc}Box plots showing the distribution of Mean Accuracy After 10-fold Cross Validation By Algorithm}
+\end{figure}.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.75\textwidth]{10_fold_prec.png}
+\caption{\label{fig:10_fold_prec}Box plots showing the distribution of Mean Accuracy After 10-fold Cross Validation By Algorithm}
+\end{figure}.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.75\textwidth]{10_fold_rec.png}
+\caption{\label{fig:10_fold_rec}Box plots showing the distribution of Mean Accuracy After 10-fold Cross Validation By Algorithm}
 \end{figure}.
 
 
