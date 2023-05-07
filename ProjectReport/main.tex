@@ -84,7 +84,6 @@
 \end{titlepage}
 
 
-
 \begin{titlepage}
    \begin{center}
        \vspace*{1cm}
@@ -123,9 +122,10 @@
 
 \maketitle
 
-\section{Introduction}
+\section{Abstract}
+Operational and environmental safety, productivity, quality are general key objectives in many industries, and in the oil and gas industry this concerns are not only crucial, but they also pose as an immense daily challenge given the complexity of their operations. This project aims to detect the presence or point the absence of Severe Slugging in offshore oil well production lines using machine learning techniques. The real instances of 3W Data Set from Petrobras were used to train and test the classification models here described, and all iterations in this project followed the CRISP-DM methodology, considered the realistic aspects of 3W Data Set, observed the strongest correlations between some features and the target and performed an extensive hyperparametrisation tuning for all models before the evaluation stage. Lastly, all these models were evaluated according their accuracy, precision, and recall, and as a result, two classifiers - Random Forest Classifier and Decision Tree Classifier - demonstrated remarkable results in comparison to other three models (namely, Artificial Neural Networks, k-Neighbours Classifier and LinearSVC). The project contributed to the successful development of classification models capable to detect Severe Slugging, therefore helping offshore oil operations to succeed in mitigating safety risks, reducing operational costs, and improving production efficiency. 
 
-Operational and environmental safety, productivity, quality are general key objectives in many industries, and in the oil and gas industry this concerns are not only crucial, but they also pose as an immense daily challenge given the complexity of their operations. 
+\section{Introduction}
 
 Generally, the oil industry has been increasingly adopting automated controls and monitoring processes \parencite{venkatasubramanian_rengaswamy_yin_kavuri_2003} to comply with the increasingly higher standards in their operations. Such standards not only require more productive operations, but safer processes and more energy-efficient methods to achieve greater quality \parencite{jounela_2007}. 
 
@@ -217,18 +217,16 @@ Ultimately, only the data from the real instances was selected for this project,
 
 According to \textcite{revvargas2019}, the \emph{realistic} aspects of the data present in the 3W data set real instances were kept, since there was no pre-processing. Therefore, NaN values, frozen variables caused by sensor or network communication problems, asymmetrical instances with non-normal distribution of the events and extreme outliers were commonly found. 
 
-These so-called "realistic" aspects of the data were expected by this project, given the complexity of an offshore operation, where a significant amount of variables were collected by sub-sea equipment located miles from the Brazilian coast.
+These so-called "realistic" aspects of the data were expected by this work, given the complexity of an offshore operation, where a significant amount of variables were collected by sub-sea equipment located miles from the Brazilian coast.
 
 \subsection{Data Collection}
 The data used in this study was extracted after following the documentation from 3W took kit \parencite{petrobras3WToolkit}, which is a Python software package with resources to experiment machine learning-based approaches and algorithms for issues related to undesirable events. The specific data used in this study was from the \emph{real instances}, and it was also available at \textcite{extracted3Wcsv} at the time of publication of this study.
 
 \subsection{Data Characterisation}
 
-The selected data set consists of 13,952,911 observations, with 14 columns of data for each observation. The first column, label, indicates the event type for each observation, while second column, well, contains the name of the well the observation was taken from. Hand-drawn and simulated instances have fixed names for in this column, while real instances have names masked with incremental id. The third column, id, is an identifier for the observation and it is incremental for hand-drawn and simulated instances, while each real instance has an id generated from its first timestamp. The columns representing the process variables are:
+The selected data set consists of 13,952,911 observations, with 14 columns of data for each observation and the distribution of the \emph{instances}. Every instance contains a variable number of text files representing the data collected in each well and they present the same data structure: the first column, label, indicates the event type for each observation, while second column, well, contains the name of the well the observation was taken from. Hand-drawn and simulated instances have fixed names for in this column, while real instances have names masked with incremental id. The third column, id, is an identifier for the observation and it is incremental for hand-drawn and simulated instances, while each real instance has an id generated from its first timestamp. 
 
-The pressure features are measured in Pascal (Pa), the volumetric flow rate features are measured in standard cubic meters per second (SCM/s), and the temperature features are measured in degrees Celsius (°C).
-
-Other information are also loaded into each pandas Dataframe:
+Besides that, the pressure features are measured in Pascal (Pa), the volumetric flow rate features are measured in standard cubic meters per second (SCM/s), and the temperature features are measured in degrees Celsius (°C). In order to maintain the realistic aspects of the data, the data set was built without pre-processing, including the presence of NaN values, frozen variables due to sensor or communication issues, instances with varying sizes, and outliers \parencite{revvargas2019}, which demanded further processing as described in the next sections.
 
 \begin{itemize}
 \item label: instance label (event type) - target variable;
@@ -236,10 +234,6 @@ Other information are also loaded into each pandas Dataframe:
 \item id: instance identifier. Hand-drawn and simulated instances have incremental id. Each real instance has an id generated from its first timestamp;
 \item class: Although it can be used to identify periods of normal operation, fault transients, and faulty steady states, which can help with diagnosis and maintenance, it is a category which results from label, which is our target here
 \end{itemize}
-
-
-
-In order to maintain the realistic aspects of the data, the data set was built without pre-processing, including the presence of NaN values, frozen variables due to sensor or communication issues, instances with varying sizes, and outliers \parencite{revvargas2019}.
 
 A concise summary of this data set generated by \emph{pandas.DataFrame.info} method can be seen on Table ~\ref{tab:widgets}.
 
@@ -265,6 +259,30 @@ source & object & type of instance: real, simulated or hand-drawn \\
 
 \end{tabular}
 \caption{\label{tab:widgets}Summary of the data set compiled from real instances}
+\end{table}
+
+
+
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr|r}
+
+INSTANCE LABEL & REAL & SIMULATED & HAND-DRAWN & TOTAL \\ \hline
+0 - Normal Operation & 597 & 0 & 0 & 597 \\
+1 - Abrupt Increase of BSW & 5 & 114 & 10 & 129 \\
+2 - Spurious Closure of DHSV & 22 & 16 & 0 & 38 \\
+3 - Severe Slugging & 32 & 74 & 0 & 106 \\
+4 - Flow Instability & 344 & 0 & 0 & 344 \\
+5 - Rapid Productivity Loss & 12 & 439 & 0 & 451 \\
+6 - Quick Restriction in PCK & 6 & 215 & 0 & 221 \\
+7 - Scaling in PCK & 4 & 0 & 10 & 14 \\
+8 - Hydrate in Production Line & 0 & 81 & 0 & 81 \\
+\hline
+\textbf{TOTAL} & 1022 & 939 & 20 & 1981 \
+\end{tabular}
+\caption{Data distribution in the different sources and instance labels.}
+\label{tab:data_distribution}
 \end{table}
 
 
@@ -299,6 +317,14 @@ Three boxplots were plotted to show how the data was distributed before any data
 \centering
 \includegraphics[width=1\textwidth]{distr_boxplots_before_cleaning.png}
 \caption{\label{fig:distr_boxplots_before_cleaning}Box plots showing the distribution of pressure, temperature, and QGL (SCM/s) data for a set of oil wells.}
+\end{figure}
+
+The distribution of the undesirable events in the real instances of 3W Data Set can be visualised on Figure \ref{fig:undesirable_event_distr}
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{undesirable_event_distr.png}
+\caption{\label{fig:undesirable_event_distr}Distribution of the undesirable events in the real instances.}
 \end{figure}
 
 
@@ -494,7 +520,7 @@ After the splitting process, the training data set had 6,846,630 rows and the te
 
 \subsection{Handling Imbalanced Data}
 
-A \emph{RandomUnderSampler} was chosen to balance training data. As a result 50\% of observations presented Severe Slugging while the other 50\% were normal or presented other undesirable event. Test data set was not balanced since this project aim to best represent your deployment scenarios in real life.
+A \emph{RandomUnderSampler} was chosen to balance training data. As a result 50\% of observations presented Severe Slugging while the other 50\% were normal or presented other undesirable event. Test data set was not balanced since this work aim to best represent your deployment scenarios in real life.
 
 \begin{lstlisting}[language=Python]
 # balancing data 
@@ -571,7 +597,7 @@ Accuracy:  0.9417780429960286
 \end{verbatim}
 
 \subsection{LinearSVC}
-Although the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a linear support vector classifier (LinearSVC) was implemented as part of this benchmark. The code below retrieved a previously trained LinearSVC model which was persisted as a Pickle file, then it predicted the class labels for the features in \emph{X\_test}, and finally generated the respective Classification Report in comparison with the labels in \emph{y\_test}.
+Although the data is not linearly separable and it is not possible to find a condition of 100\% correctly classified by a hyperplane, a linear support vector classifier (LinearSVC) was implemented as part of this benchmark. The code below retrieved a previously trained LinearSVC model which was persisted as a Pickle file, then it predicted the class labels for the features in \emph{X\_test}, and finally generated the respective Classification Report in comparison with the labels in \emph{y\_test}.
 
 \begin{lstlisting}[language=Python]
 with open(os.path.join('pickle', 'linear_svc_pipeline.pkl'), 'rb') as f:
@@ -590,7 +616,8 @@ For finding the best parameters for this model, the hyperparameters to tune PCA 
 \item \emph{linearsvc} which applies the LinearSVC model.
 \end{enumerate}
 
-Finally, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best f1 metric with the default cross-validation, that is, a 5-fold cross-validation.
+At this point, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best f1 metric with the default cross-validation, that is, a 5-fold cross-validation. Also, the parameter \emph{class\_weight} was listing possible 2 values (\emph{balanced} and \emph{None}) during hyperparametrisation tuning, since the "balanced" mode considers \emph{y} values to adjust the weights inversely proportional to the class frequencies in the input data, which is effectively balanced at this point for this model.
+
 \begin{lstlisting}[language=Python]
 from sklearn.svm import LinearSVC
 
@@ -717,6 +744,54 @@ knn_pipeline = Pipeline([
 knn_pipeline.fit(X_train, y_train)
 \end{lstlisting}
 
+Although the risk of over-fitting was relatively unlikely given the minimal configuration used in this model, a comparison between the f1 score in training and test data sets according the \emph{n\_neighbors} was implemented below. This chart is visible on Figure \ref{fig:knn_overfitting}.
+
+\begin{lstlisting}[language=Python]
+# initialising arrays for storing train and test accuracy
+neighbors = np.arange(3, 103, 10)     
+knn_train_f1_score = np.zeros(len(neighbors))    
+knn_test_f1_score = np.zeros(len(neighbors))    
+
+# looping over different values of k
+for i, k in enumerate(neighbors):     
+    knn_pipeline_ = Pipeline([
+        ('scaler', scaler_pipeline), 
+        ('dimred', PCA(n_components=4)), 
+        ('kneighborsclassifier', KNeighborsClassifier(n_neighbors=k))
+    ])
+    
+    knn_pipeline_.fit(X_train, y_train)                             
+    y_pred_train = knn_pipeline_.predict(X_train)
+    y_pred_test = knn_pipeline_.predict(X_test)
+    
+    knn_train_f1_score[i] = f1_score(y_train, y_pred_train)    
+    knn_test_f1_score[i] = f1_score(y_test, y_pred_test)   
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python]
+# creating figure, adding title
+plt.figure(figsize = (10, 6))
+
+# plotting the test accuracy and traning accuracy x number of neighbours
+plt.plot(neighbors, knn_test_f1_score, label = 'Testing F1')
+plt.plot(neighbors, knn_train_f1_score, label = 'Training F1')
+
+# adding legend, axes labels, setting font size and axes ticks
+plt.legend(prop={'size': 10})
+plt.xlabel('Number of neighbors', fontsize = 10)
+plt.ylabel('F1 Score', fontsize = 10)
+plt.xticks(fontsize = 10)
+plt.yticks(fontsize = 10)
+
+plt.show()
+\end{lstlisting}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{knn_overfitting.png}
+\caption{\label{fig:knn_overfitting}Comparison between training and test f1 score according the number of neighbours in k-Neighbours Classifier}
+\end{figure}
+
 \subsection{Artificial Neural Network}
 
 In this subsection, \emph{Keras} and \emph{Tensorflow} libraries were used to define a baseline model using Artificial Neural Network (ANN). Similar to previous models, the code below could retrieve a previously trained ANN model which was persisted as a Pickle file, then it predicted the class labels for the features in \emph{X\_test} after normalisation and adjusting the data type using \emph{Numpy} function. After this, the corresponding Classification Report in comparison with the labels in \emph{y\_test} was generated. 
@@ -749,13 +824,13 @@ Also the parameter \emph{batch\_size} was set as 2048, a relatively high value f
 
 \subsubsection{Data Preparation for Keras}
 
-For this model, a distinct approach to prepare the data set was adopted. Firstly, the original imbalanced clean data set was copied and split with the same parameter \emph{random\_state=42} used to generate the training data set used to fit and test the other models in this project. Secondly, the resulting train data set from this process was split again into train set and validation set.
+For this model, a distinct approach to prepare the data set was adopted. Firstly, the original imbalanced clean data set was copied and split with the same parameter \emph{random\_state=42} used to generate the training data set used to fit and test the other models in this work. Secondly, the resulting train data set from this process was split again into train set and validation set.
 
 Then, the validation set was only used during the model fitting to evaluate the loss, precision, recall and accuracy - however the model was not fit with this data. As a consequence, the test set was completely isolated during the training stage and was only used to evaluate how well the model generalizes to new data. 
 
 This approach is highly recommended to avoid over-fitting, which is a constant concern due to a possible lack of training data in imbalanced data sets \parencite{tensorflow2015-whitepaper} like the one used in this project, where the number of examples not presenting Severe Slugging class greatly outnumbered the examples presenting it.
 
-Given this, the processes adopted for the data set in this section for data cleaning and scaling were the same processes adopted for the other models in this project, however the data is not balanced at this points. These adjustments were necessary to fulfill the requirements of a similar model described in TensorFlow Tutorial provided by \textcite{tensorflow2015-whitepaper}. The code that had performed these tasks can be see below. 
+Given this, the processes adopted for the data set in this section for data cleaning and scaling were the same processes adopted for the other models in this work, however the data is not balanced at this points. These adjustments were necessary to fulfill the requirements of a similar model described in TensorFlow Tutorial provided by \textcite{tensorflow2015-whitepaper}. The code that had performed these tasks can be see below. 
 
 \begin{lstlisting}[language=Python]
 ann_df = df_feat.copy() # copying the imbalanced but clean data set
@@ -858,7 +933,7 @@ def make_model(metrics=ANN_METRICS, output_bias=None):
     return model
 \end{lstlisting}
 
-The number of epochs used as a reference for this model in this project was 100, however it was not reached, because a resource called \emph{EarlyStopping} was implemented to interrupt the training if a monitored metric has stopped improving. In this resource, the parameter \emph{patience} can be set to make the training more tolerant to possible oscillations in the monitored metric throughout the epochs and the monitored metric here is the \emph{validation precision-recall curve}, which evidences the trade-off between precision and recall for different threshold.
+The number of epochs used as a reference for this model in this work was 100, however it was not reached, because a resource called \emph{EarlyStopping} was implemented to interrupt the training if a monitored metric has stopped improving. In this resource, the parameter \emph{patience} can be set to make the training more tolerant to possible oscillations in the monitored metric throughout the epochs and the monitored metric here is the \emph{validation precision-recall curve}, which evidences the trade-off between precision and recall for different threshold.
 
 \begin{lstlisting}[language=Python]
 EPOCHS = 100
@@ -1061,7 +1136,7 @@ def plot_metrics(history):
 plot_metrics(baseline_history)
 \end{lstlisting}
 
-Ultimately, the training process was interrupted by the resource \emph{EarlyStopping} after 58 epochs after not registering a better PRC for 10 epochs. More details about the metrics were presented at Evaluation section of this project.
+Ultimately, the training process was interrupted by the resource \emph{EarlyStopping} after 58 epochs after not registering a better PRC for 10 epochs. More details about the metrics were presented at Evaluation section of this work.
 
 \begin{figure}
 \centering
@@ -1132,6 +1207,14 @@ tree_pipeline = Pipeline([
 tree_pipeline.fit(X_train, y_train)
 \end{lstlisting}
 
+Although the training and the fitting for this model was one of the the least sophisticated among all 5 models, the resulting decision tree was too complex to be visualised with details in this project. However, an overview of this tree can be seen on Figure \ref{fig:decision_tree}.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{decision_tree.png}
+\caption{\label{fig:decision_tree}Overview of the Decision Tree Classifier for 3W Data Set}
+\end{figure}
+
 \subsection{Random Forest Classifier} 
 As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Random Forest Classifier was implemented as part of this benchmark. The following code loaded a previously trained Random Forest Classifier model which was saved as a Pickle file, then it predicted the class labels for the features in \emph{X\_test}, and finally generated the respective Classification Report in comparison with the labels in \emph{y\_test}.
 
@@ -1150,7 +1233,9 @@ For finding the best parameters for this model, the hyperparameters to tune the 
 \item \emph{randomforestclassifier} which applies the Random Forest model.
 \end{enumerate}
 
-Then, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation.
+Then, a grid search was performed using the above-mentioned pipeline and the hyperparameter grid to find the combination with the best accuracy metric with the default cross-validation, that is, a 5-fold cross-validation. Similar to \emph{LinearSVC}, the parameter \emph{class\_weight} was listing 2 possible values, \emph{balanced} and \emph{balanced\_subsample}, during hyperparametrisation tuning. The former also adjusts the weights in the same way as previously described, while the latter works similarly, except that weights are computed based on the bootstrap sample for every tree grown.
+
+
 \begin{lstlisting}[language=Python]
 from sklearn.ensemble import RandomForestClassifier
 
@@ -1448,9 +1533,17 @@ plot_metric_boxplot('recall', cv_val_dict, number_folds)
 
 \section{Conclusion}
 
-In this study, Random Forest and Decision Tree Classifiers had the best performance overall with 99.994\% and 99.982\% of accuracy respectively. These non-linear classifiers could find better results because the 3W data set does not present a clear linear separability between records related to Severe Slugging and other normal records or other undesirable events.
+The general goal of this capstone work was developing and using machine learning approaches to detect the presence and the absence of Severe Slugging in an offshore well production line, considering as a reference the real instances from 3W data set. In addition to this, after the definition of three metrics as success criteria (accuracy, precision and recall) and the definition of a baseline score, an eligible classification model must present significant results in all 3 metrics. 
 
+This work managed to find 2 models with satisfactory results in all selected metrics, namely Random Forest Classifier and Decision Tree Classifier. This was possible due to:
+\begin{enumerate}
+    \item Adopting CRISP-DM, which enabled the group to correctly plan a hypothesis, build a minimally viable implementation, measuring the results and making the necessary adjustments before proceeding to another iteration; 
+    \item Understanding the business domain, the data set and then selecting the most promising features, after identifying the strongest correlations between them and the target;    
+    \item Defining the data had no clear linear separability, by visualising the results from dimensionality reduction with 2 and 3 components and by measuring the score from a LinearSVC model, which enabled this project to invest more resources on non-linear classifiers;
+    \item Implementing solutions to assertively evaluate the results in all 5 models according the selected metrics
+\end{enumerate}
 
+Overall, the results presented here show the potential for classification models to enhance the detection of Severe Slugging. Once such models are deployed, they may help an offshore oil operation to mitigate operational and environmental risks, reduce costs in operation and improve the production efficiency, as it could mitigate operational losses. Also, the methods and techniques used in this project can be further improved and extended to detect other undesirable events not only in 3W Data Set but also in the general oil and gas industry.
 
 \iffalse
 
