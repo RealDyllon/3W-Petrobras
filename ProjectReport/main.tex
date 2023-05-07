@@ -125,25 +125,30 @@
 
 \section{Introduction}
 
-Operational safety, productivity, quality are general key objectives in any industry, and in the oil and gas industry, environmental concerns are not only crucial, but they also pose as an immense daily challenge. 
+Operational and environmental safety, productivity, quality are general key objectives in many industries, and in the oil and gas industry this concerns are not only crucial, but they also pose as an immense daily challenge given the complexity of their operations. 
 
-Generally, the oil industry has been increasingly adopting automated controls and monitoring processes \parencite{venkatasubramanian_rengaswamy_yin_kavuri_2003} to comply with the increasingly higher standards in their operations. Such standards not only require more productive operations, but safer processes and more energy-efficient methods to achieve greater quality \parencite{jounela_2007}.
+Generally, the oil industry has been increasingly adopting automated controls and monitoring processes \parencite{venkatasubramanian_rengaswamy_yin_kavuri_2003} to comply with the increasingly higher standards in their operations. Such standards not only require more productive operations, but safer processes and more energy-efficient methods to achieve greater quality \parencite{jounela_2007}. 
 
-Thus, any event which can cause a production loss in an oil field are certainly very costly, in pure economic terms, but can also have dire costs in terms of human lives and of damage to our environment that can be hard to address or almost permanent in some cases. Therefore, any technique that can help early detection and/or prevention of technical accidents in the oil industry is therefore very welcome and “worth as gold”. 
+All this increasing investment also aims to build processes that can timely detect faults or anomalous systematic behaviours which can affect the normal state of the operations, ultimately causing undesirable events in production line. Such events, for example, were responsible for most of the production loss at Petrobras Operational Unit located in the Brazilian state of Espírito Santo (UO-ES) in 2016 \parencite{revvargas2019}, which was around 1.5 million barrels, that is, US\$75.7 million - the average value of the barrel was approximately US\$50 at the time.
 
-Offshore oil wells provide some of the most challenging operating conditions in the industry, with additional complexity due to the peculiarities of operating at sea and the limited amount of instrumentation that can be deployed to monitor and control the well operational status.
+After this, tn 2017 Petróleo Brasileiro S.A., the Brazilian oil company known as Petrobras, launched a project named \emph{“Monitoramento de Alarmes Especialistas"} (“Expert Alarm Monitoring" - MAE) to improve its abnormal event management (AEM) in oil and gas wells and  to complement their monitoring processes at the time. The project MAE aimed to create a new automated AEM to detect and classify 8 specific \emph{undesirable events} in offshore naturally flowing wells.  
 
-One of the main challenges in oil industry is predicting undesirable events such as \emph{Severe Slugging}. Severe Slugging is an critical flow assurance issue, commonly observed in offshore pipeline-riser systems, documented for the first time by \textcite{yocum_1973}. Some of the consequences of this issue include flooding of downstream production facilities and an overall decrease in productivity. According \textcite{revvargas2019} depending on the frequency it occurs and intensity, this event may even damage the equipment in the well, although specific operational actions can be taken to mitigate this issue since it is detected.
+Among these above-mentioned undesirable events, there is an event known as \emph{Severe Slugging}, which can be defined as a critical flow assurance issue, commonly observed in offshore pipeline-riser systems, documented for the first time by \textcite{yocum_1973}. Some of the consequences of this issue include flooding of downstream production facilities and an overall decrease in productivity. According \textcite{revvargas2019} depending on the frequency it occurs and intensity, this event may even damage the equipment in the well, although specific operational actions can be taken to mitigate this issue since it is detected.
 
-According \textcite{revvargas2019}, a simplified description of a typical offshore well can be seen in Figure \ref{fig:offshore_well} and its structure is basically composed by:
+Considering that, Petrobras has developed the 3W Project, which is a project built upon the 3W Data Set and the 3W Took Kit. The former is a database defined by \textcite{revvargas2019} and it contains instances from three different sources and contains data on undesirable events that occur in oil wells, namely real instances, simulated instances and hand-drawn instances - therefore the name "3W". The latter is a software package for data collection, analysis and experimentation with the 3W Data Set for specific problems faced by Petrobras offshore operations.
+
+\subsection{Business Understanding}
+
+\textcite{revvargas2019} also provided a simplified graphic description of a typical offshore well, as it can be seen in Figure \ref{fig:offshore_well}. Its structure is basically composed by:
 
 \begin{itemize}
-\item The Christmas Tree, a structure lying on the seabed, at the well head, with pressure and temperature sensors and safety valves
+\item The "Christmas Tree", a structure lying on the seabed, at the well head, with pressure and temperature sensors and safety valves
 \item An Electro-Hydraylic Umbilical, which is how The Christmas Tree is remotely controlled.
-\item The Permanent Downhole Gauge (PDG), installed at the Christmas Tree;
-\item The Temperature and Pressure Transducer (TPT), also a part of the Christmas Tree;
-\item The Production Choke (PCK), installed on the drilling vessel/rig at the top;
-\item The Downhole Safety Valve (DHSV), a safety valve installed in the production tubing of wells
+\item Permanent Downhole Gauge (PDG), installed at the Christmas Tree;
+\item Temperature and Pressure Transducer (TPT), also a part of the Christmas Tree;
+\item Production Choke (PCK), installed on the drilling vessel/rig at the top;
+\item Downhole Safety Valve (DHSV), a safety valve installed in the production tubing of wells
+\item Gas-Lift Choke Oil well (CKGL), a device which controls pressure drop and allows some expansion of the gas \parencite{petrowiki_2013}
 \end{itemize}
 
 
@@ -153,25 +158,27 @@ According \textcite{revvargas2019}, a simplified description of a typical offsho
 \caption{\label{fig:offshore_well}Schematic of a typical offshore well}
 \end{figure}
 
-Given this, Petrobras, the Brazilian oil company, has developed a data set (3W) that contains data for the most common monitored variables in offshore oil wells. This project aims to understand the relations between these variables and oil well operational anomalies, such as Severe Slugging.
+In addition to this, Petrobras experts can confirm the issues of each type of undesirable event after considering their distinct time window sizes \parencite{revvargas2019}. For Severe Slugging specifically, the window size was set as 5 hours.
+
 
 \subsection{Hypothesis}
-The data present in 3W Data Set allows classifier models to predict Severe Slugging with high accuracy.
+The data present in 3W Data Set's real instances enables classifier models to detect Severe Slugging with high accuracy, precision and recall.
 
 \subsection{General Goal}
-The business objective of our project is to apply machine learning techniques modeled in this project to the 3W data set to accurately predict \emph{Severe Slugging} in an offshore well production line. Achieving a significant accuracy in these predictions should be possible by identifying the correlations between the variables presented in the records monitored in an offshore oil well operation. 
-
+The business objective of our project is to apply machine learning techniques modeled in this project to the 3W data set to accurately detect \emph{Severe Slugging} in an offshore well production line. By identifying the correlations between the variables presented in the records monitored in an offshore oil well operation, this project must present at least one classification model with high accuracy, precision and recall when detecting presence or absence of Severe Slugging. 
 
 \subsection{Success Criteria}
-Success will be defined as the ability to accurately predict one or more of the conditions leading to an undesirable event. Given the potentially catastrophic impacts (ethical, environmental, economic) of accidents in the oil industry, the ability to predict a potential risk so that a quick reaction/fix can avoid unrecoverable conditions has a clear business value.
+The metrics which are guiding this project are accuracy, precision and recall presented by the models when performing a binary classification to detect the presence or absence of Severe Slugging. 
+
+As stated by \textcite{wegier_ksieniewicz_2020}, the mere use of accuracy as metric for binary classification of imbalanced data does not consider the disparities in the problem classes and therefore misjudges the quality of the model. Adopting recall as a criteria enabled this project to determine the accuracy of the minority class classification - that is, the presence of Severe Slugging - and adopting precision could help the define the  probability of its correct detection.
 
 \subsection{Methodologies and Technologies}
 
-The methodology that guided this project was \emph{CRISP-DM}, which is most widely adopted methodology for data mining, analytics, and data science projects \parencite{ibm_crisp_dm}. Given this, a number of software libraries and modules were used throughout this process to support some of its distinct stages, that is, Data Understanding, Data Preparation, Modeling, and Evaluation. 
+The methodology that guided this project was \emph{CRISP-DM}, which is most widely adopted methodology for data mining, data analytics, and data science projects \parencite{ibm_crisp_dm}. Given this, a number of software libraries and modules were used throughout this process to support some of its distinct stages, that is, Data Understanding, Data Preparation, Modeling, and Evaluation. 
 
 Once the methodology was defined, Petrobras' \emph{3W Tool Kit} was studied and used to extract the data from the instances interesting to the project, that is, from the real instances that effectively presented the Severe Slugging event.
 
-Then, \emph{Pandas} and \emph{NumPy} libraries were selected for data manipulation and analysis. Then, the base machine learning library for the majority of models in this project was \emph{Scikit-learn}, as it offers various preprocessing, classification models and clustering algorithms. Another library imported in this project was \emph{Keras}, which is is an open-source solution that provides an interface for artificial neural networks.
+Then, \emph{Pandas} and \emph{NumPy} libraries were selected for data manipulation and analysis. Then, the base machine learning library for the majority of models in this project was \emph{Scikit-learn}, as it offers various pre-processing, classification models and clustering algorithms. Another library imported in this project was \emph{Keras}, which is is an open-source solution that provides an interface for artificial neural networks.
 
 Besides that, \emph{StandardScaler} from the \emph{Scikit-learn} library was selected for scaling and normalisation of the data. Given the high data imbalance presented by the data set, a \emph{RandomUnderSampler} was also from \emph{Imbalanced-learn} library was imported. Regarding feature reduction, the decomposition algorithm \emph{PCA}, also from \emph{Scikit-learn}, was adopted here in this study. 
 
@@ -198,24 +205,26 @@ Lastly, the modules \emph{make\_pipeline} and \emph{Pipeline} from \emph{Scikit-
 
 
 \subsection{Accomplishment}
-After extracting using 3W Tool Kit and some CRISP-DM iterations, this project presented 2 models with a high accuracy.
+After extracting the data using 3W Tool Kit and performing iterations with observance of CRISP-DM, this project managed to find 2 classification models with high accuracy, precision, and recall.
 
 \section{Data Understanding}
 
 Pre-processing a data set through data characterisation involves summarising the features and characteristics present in the data using statistical measures and visualisations techniques such as bar charts and scatter plots. After this stage, it should be possible to identify biases, patterns, trends, and any missing or irrelevant data in the data set that may need to be addressed.
 
-This data set is composed by instances of eight types of undesirable events characterized by eight process variables from three different sources: real instances, simulated instances and hand-drawn instances. All real instances were taken from the plant information system that is used to monitor the industrial processes at an operational unit in Brazilian state of Espírito Santo. The simulated instances were all generated using OLGA, a dynamic multi-phase flow simulator that is widely used by oil companies worldwide \parencite{andreolli2016introduccao}. Finally, the hand-drawn instances were generated by a specific tool developed by Petrobras researchers for this data set to incorporate undesirable events classified as rare.
+This data set is composed by instances of eight types of undesirable events characterized by eight process variables from three different sources: real instances, simulated instances and hand-drawn instances. All real instances were taken from the plant information system that is used to monitor the industrial processes at an operational unit in Brazilian state of Espírito Santo - namely UO-ES. The simulated instances were all generated using OLGA, a dynamic multi-phase flow simulator that is widely used by oil companies worldwide \parencite{andreolli2016introduccao}. Eventually, the hand-drawn instances were generated by a specific tool developed by Petrobras researchers for this data set to incorporate undesirable events classified as rare.
 
-Ultimately, only the data from the real instances was selected for this project, as simulated instances and hand-drawn instances did not present any record for two features relevant to Severe Slugging, namely Gas Lift Flow Rate and Pressure Variable Upstream Of the Gas Lift Choke.
+Ultimately, only the data from the real instances was selected for this project, as simulated instances and hand-drawn instances did not present any record for two features relevant to Severe Slugging, namely Gas Lift Flow Rate (QGL) and Pressure Variable Upstream of the Gas Lift Choke.
+
+According to \textcite{revvargas2019}, the \emph{realistic} aspects of the data present in the 3W data set real instances were kept, since there was no pre-processing. Therefore, NaN values, frozen variables caused by sensor or network communication problems, asymmetrical instances with non-normal distribution of the events and extreme outliers were commonly found. 
+
+These so-called "realistic" aspects of the data were expected by this project, given the complexity of an offshore operation, where a significant amount of variables were collected by sub-sea equipment located miles from the Brazilian coast.
 
 \subsection{Data Collection}
 The data used in this study was extracted after following the documentation from 3W took kit \parencite{petrobras3WToolkit}, which is a Python software package with resources to experiment machine learning-based approaches and algorithms for issues related to undesirable events. The specific data used in this study was from the \emph{real instances}, and it was also available at \textcite{extracted3Wcsv} at the time of publication of this study.
 
 \subsection{Data Characterisation}
 
-The selected data set consists of 13,952,911 observations, with 14 columns of data for each observation. The first column, label, indicates the event type for each observation. The second column, well, contains the name of the well the observation was taken from. Hand-drawn and simulated instances have fixed names for in this column, while real instances have names masked with incremental id. The third column, id, is an identifier for the observation and it is incremental for hand-drawn and simulated instances, while each real instance has an id generated from its first timestamp. The columns representing the process variables are:
-
-
+The selected data set consists of 13,952,911 observations, with 14 columns of data for each observation. The first column, label, indicates the event type for each observation, while second column, well, contains the name of the well the observation was taken from. Hand-drawn and simulated instances have fixed names for in this column, while real instances have names masked with incremental id. The third column, id, is an identifier for the observation and it is incremental for hand-drawn and simulated instances, while each real instance has an id generated from its first timestamp. The columns representing the process variables are:
 
 The pressure features are measured in Pascal (Pa), the volumetric flow rate features are measured in standard cubic meters per second (SCM/s), and the temperature features are measured in degrees Celsius (°C).
 
@@ -259,7 +268,7 @@ source & object & type of instance: real, simulated or hand-drawn \\
 \end{table}
 
 
-The labels for the possibel undesirable events found in the data set are:
+The values for all undesirable events found in the data set in column \emph{label} are:
 
 \begin{itemize}
 \item 0 - Normal Operation = Normal
@@ -535,7 +544,9 @@ The unsupervised learning technique Principal Component Analysis (PCA) was chose
 
 \section{Modeling}
 
-For this project, five models were chosen: LinearSVC, k-Nearest Neighbors Classifier, Artificial Neural Network, Decision Tree Classifier and Random Forest Classifier. 
+As stated by \textcite{venkatasubramanian_rengaswamy_yin_kavuri_2003}, the abnormal event management (AEM) includes detection of an event, analysing its root cause and taking the suitable control decisions and measures to bring the situation into a normal, safe and operational condition. Additionally, an automated AEM should handle diagnosis of an event as a classification task.
+
+Given this, five models were chosen for this project: LinearSVC, k-Nearest Neighbors Classifier, Artificial Neural Network, Decision Tree Classifier and Random Forest Classifier. 
 
 \subsection{Baseline: DummyClassifier}
 Before proceeding with other models, a DummyClassifier was adopted to find a baseline for validation accuracy using the test data set. Given the distribution of the target variable in test data set, the baseline for any model was set in 94.17\%.
@@ -1124,7 +1135,7 @@ tree_pipeline.fit(X_train, y_train)
 \subsection{Random Forest Classifier} 
 As the data is not linearly separable and it's not possible to find a condition of 100\% correctly classified by a hyperplane, a non-linear classifier is recommended, thus a Random Forest Classifier was implemented as part of this benchmark. The following code loaded a previously trained Random Forest Classifier model which was saved as a Pickle file, then it predicted the class labels for the features in \emph{X\_test}, and finally generated the respective Classification Report in comparison with the labels in \emph{y\_test}.
 
-\begin{lstlisting}
+\begin{lstlisting}[language=python]
 with open(os.path.join('pickle', 'rf_pipeline.pkl'), 'rb') as f:    
 rf_pipeline = pickle.load(f)
     
